@@ -1,68 +1,98 @@
-# RemitX — Cross-Border Remittance Routing Protocol
+<div align="center">
 
-[![Next.js](https://img.shields.io/badge/Next.js-16.2-000000?logo=next.js)](https://nextjs.org)
-[![Stellar](https://img.shields.io/badge/Stellar-Network-7B00FF?logo=stellar)](https://stellar.org)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss)](https://tailwindcss.com)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+# 🌍 RemitX
 
-**RemitX** is a mobile-first dApp built on the **Stellar Network** that optimises cross-border payments. It intelligently routes funds through the most cost-effective payment paths and compares anchor fees to ensure users get the best exchange rates for corridors like Nigeria (NGN), Philippines (PHP), UK (GBP), and USA (USD).
+### Cross-Border Remittance Routing Protocol on the Stellar Network
 
-> **Live Demo** — [remitx.app](https://remitx.app) _(placeholder)_
+**Send money across borders in seconds — not days. RemitX intelligently routes funds through the most cost-effective payment paths on Stellar, comparing anchor fees in real time to guarantee the best exchange rates for corridors spanning Nigeria (NGN), the Philippines (PHP), the United Kingdom (GBP), and the United States (USD).**
 
----
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Getting Started](#getting-started)
-- [Project Structure](#project-structure)
-- [Architecture](#architecture)
-- [Routes](#routes)
-- [Environment Variables](#environment-variables)
-- [Contributing](#contributing)
-- [License](#license)
+[![Next.js](https://img.shields.io/badge/Next.js-16.2-000000?logo=next.js&style=for-the-badge)](https://nextjs.org)
+[![Stellar](https://img.shields.io/badge/Stellar-Network-7B00FF?logo=stellar&style=for-the-badge)](https://stellar.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&style=for-the-badge)](https://typescriptlang.org)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&style=for-the-badge)](https://tailwindcss.com)
+[![Prisma](https://img.shields.io/badge/Prisma-7-2D3748?logo=prisma&style=for-the-badge)](https://prisma.io)
+[![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
 
 ---
 
-## Overview
+**✨ Live Demo** — [remitx.app](https://remitx.app) _(coming soon)_
 
-RemitX leverages the Stellar Network to deliver instant cross-border settlements with significantly lower fees than traditional banking. The platform provides:
-
-- **Path Payment Router** — Queries Stellar Horizon for optimal liquidity paths.
-- **Anchor Comparison** — Real-time fee comparison for SEP-24 off-ramps.
-- **DEX Monitor** — Real-time rate tracking and threshold alerts.
-- **Soroban Ready** — Smart contract extension support via Soroban.
+</div>
 
 ---
 
-## Features
+## 📑 Table of Contents
 
-| Feature | Description |
+- [Overview](#-overview)
+- [Key Features](#-key-features)
+- [Technology Stack](#-technology-stack)
+- [Architecture](#-architecture)
+- [Getting Started](#-getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Environment Configuration](#environment-configuration)
+  - [Database Setup](#database-setup)
+  - [Running the Application](#running-the-application)
+- [Environment Variables](#-environment-variables)
+- [API Reference](#-api-reference)
+- [Project Structure](#-project-structure)
+- [Smart Contract (Soroban Escrow)](#-smart-contract-soroban-escrow)
+- [Security](#-security)
+- [Deployment](#-deployment)
+- [Contributing](#-contributing)
+- [License](#-license)
+
+---
+
+## 🚀 Overview
+
+RemitX is a **mobile-first decentralized application (dApp)** built on the **Stellar Network** that revolutionizes cross-border remittances. By leveraging Stellar's lightning-fast settlement layer and path payment protocol, RemitX delivers:
+
+| Capability | Description |
 |---|---|
-| 🌐 **Multi-Corridor Support** | USD, NGN, GBP, PHP with real-time liquidity |
-| ⚡ **Sub-5 Second Settlement** | Transactions finalised in seconds, not days |
-| 🔍 **Anchor Fee Comparison** | Compare SEP-24 anchor fees side-by-side |
-| 📊 **DEX Rate Monitor** | Live Stellar DEX rates with configurable alerts |
-| 📱 **Mobile-First UI** | Responsive design with Framer Motion animations |
-| 🔒 **Bank-Grade Security** | Encryption, regulated anchors, SEC compliant |
-| 🧩 **Soroban Smart Contracts** | Extensible via Rust-based Soroban contracts |
+| ⚡ **Sub-5 Second Settlement** | Transactions finalize in seconds, not the 3–5 business days typical of traditional banking |
+| 💱 **Path Payment Router** | Queries Stellar Horizon for optimal liquidity paths, automatically finding the cheapest route |
+| 🏦 **Anchor Fee Comparison** | Real-time side-by-side comparison of SEP-24 anchor off-ramp fees |
+| 📊 **DEX Rate Monitor** | Live Stellar DEX rate tracking with configurable threshold alerts |
+| 🔒 **Bank-Grade Security** | bcrypt password hashing, JWT session authentication, Cloudflare Turnstile bot protection |
+| 🧩 **Soroban Smart Contracts** | Optional escrow layer via Rust-based Soroban contracts for added safety |
 
 ---
 
-## Tech Stack
+## ✨ Key Features
+
+### 🌐 Multi-Corridor Support
+Real-time liquidity across USD, NGN, GBP, PHP, EUR, and more — with a curated directory of vetted SEP-24 anchors for each corridor.
+
+### 🔍 Intelligent Rate Engine
+A zero-cost, keyless rate engine that aggregates live prices from **CoinGecko** (crypto) and **ExchangeRate-API** (150+ fiat currencies), with a 5-minute in-memory cache and graceful fallback rates when APIs are unreachable.
+
+### 📱 Mobile-First Experience
+A responsive, animated interface built with Tailwind CSS 4 and Framer Motion, optimized for the way people actually send money — on their phones.
+
+### 🛡️ Enterprise-Grade Authentication
+- bcrypt password hashing (12 salt rounds)
+- JWT sessions in httpOnly, secure cookies
+- Cloudflare Turnstile bot verification on login and registration
+- Route-level middleware protection for all authenticated pages
+
+### 🧩 Optional Escrow Protection
+A Soroban smart contract that can hold transfers in escrow until a release condition is met — giving senders a safety net if something goes wrong.
+
+---
+
+## 🛠️ Technology Stack
 
 ### Frontend
 
 | Technology | Purpose |
 |---|---|
-| [Next.js 16](https://nextjs.org) (App Router) | React framework with SSR/SSG |
+| [Next.js 16](https://nextjs.org) (App Router) | React framework with SSR, SSG, and server components |
 | [React 19](https://react.dev) | UI component library |
-| [TypeScript](https://typescriptlang.org) | Type-safe development |
+| [TypeScript 5](https://typescriptlang.org) | Type-safe development |
 | [Tailwind CSS 4](https://tailwindcss.com) | Utility-first styling |
 | [Framer Motion](https://framermotion.framer.website) | Page & component animations |
-| [Material Symbols](https://fonts.google.com/icons) | Icon system |
+| [Lucide React](https://lucide.dev) | Icon system |
 
 ### Backend & Blockchain
 
@@ -70,208 +100,381 @@ RemitX leverages the Stellar Network to deliver instant cross-border settlements
 |---|---|
 | [Stellar Network](https://stellar.org) | Blockchain settlement layer |
 | [Stellar Horizon](https://developers.stellar.org/api/horizon) | Blockchain API & path payments |
+| [@stellar/stellar-sdk](https://github.com/stellar/js-stellar-sdk) | Stellar SDK for transactions & accounts |
 | [SEP-24](https://stellar.org/protocol/sep-24) | Anchor off-ramp standard |
 | [Soroban](https://soroban.stellar.org) | Smart contract platform (Rust) |
 
-### Tooling
+### Data & Infrastructure
 
-| Tool | Purpose |
+| Technology | Purpose |
 |---|---|
-| ESLint | Code linting |
-| PostCSS | CSS processing |
-| TypeScript | Type checking |
+| [Prisma 7](https://prisma.io) | Type-safe ORM with PostgreSQL adapter |
+| [Supabase Postgres](https://supabase.com) | Managed PostgreSQL database |
+| [Zod](https://zod.dev) | Runtime schema validation for all API routes |
+| [Cloudflare Turnstile](https://www.cloudflare.com/products/turnstile/) | Bot verification |
+| [Vercel](https://vercel.com) | Deployment platform |
 
 ---
 
-## Getting Started
+## 🏗️ Architecture
+
+RemitX follows a **Next.js App Router** architecture with a clean separation between public and authenticated routes, server-side data fetching, and direct Stellar Horizon integration.
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         Client (Next.js 16)                          │
+│  ┌──────────┐  ┌──────────┐  ┌──────────────────────────────────┐   │
+│  │ Landing  │  │ Dashboard│  │  Send / Routes / Anchors / Rates │   │
+│  │  Page    │  │          │  │  Review / Activity / Support     │   │
+│  └──────────┘  └──────────┘  └──────────────────────────────────┘   │
+│                      │              │                                │
+│              ┌───────┴───────┐      │                                │
+│              │  Middleware   │      │                                │
+│              │  (JWT Auth)   │      │                                │
+│              └───────┬───────┘      │                                │
+└──────────────────────┼──────────────┼───────────────────────────────┘
+                       │              │
+              ┌────────┴────────┐     │
+              │  API Routes     │     │
+              │  /api/auth      │     │
+              │  /api/stellar   │     │
+              │  /api/anchors   │     │
+              │  /api/transactions│    │
+              └────────┬────────┘     │
+                       │              │
+        ┌──────────────┼──────────────┼──────────────┐
+        │              │              │              │
+┌───────┴───────┐ ┌────┴─────┐ ┌─────┴─────┐ ┌──────┴──────┐
+│  Supabase     │ │ Stellar  │ │  Rate     │ │  Soroban    │
+│  Postgres     │ │ Horizon  │ │  Engine   │ │  Escrow     │
+│  (Prisma)     │ │  API     │ │  (Free)   │ │  Contract   │
+└───────────────┘ └──────────┘ └───────────┘ └─────────────┘
+```
+
+### Key Design Decisions
+
+- **App Router** — Next.js 16 App Router for nested layouts, server components, and route groups.
+- **Route Groups** — The `(app)` route group wraps all authenticated pages with a shared layout (Header + Sidebar).
+- **Middleware Protection** — `src/middleware.ts` verifies JWT sessions on every request, redirecting unauthenticated users to `/login` and returning `401` for protected API routes.
+- **Server-Side Data** — Prisma queries and Stellar SDK calls run server-side in API routes, keeping secrets out of the browser.
+- **Zero-Cost Rate Engine** — Live rates from free public APIs with in-memory caching — no API keys, no database, no external service required.
+- **Type-Safe Validation** — Every API route validates input with Zod schemas before processing.
+- **Mobile-First** — Responsive design with Tailwind breakpoints, optimized for mobile wallets.
+
+---
+
+## 🚦 Getting Started
 
 ### Prerequisites
 
-- **Node.js** >= 18
-- **npm** >= 9 (or pnpm / yarn)
-- A Stellar testnet/public network endpoint (optional for development)
+| Requirement | Version |
+|---|---|
+| [Node.js](https://nodejs.org) | ≥ 18 |
+| [npm](https://npmjs.com) | ≥ 9 (or pnpm / yarn) |
+| [Supabase](https://supabase.com) account | Free tier is sufficient |
+| [Cloudflare](https://cloudflare.com) account | For Turnstile (optional for dev) |
 
 ### Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/Codex723/RemitX.git
+# 1. Clone the repository
+git clone https://github.com/Northgate-Systems/RemitX.git
 cd RemitX
 
-# Install dependencies
+# 2. Install dependencies
 npm install
 
-# Copy environment variables
-cp .env.example .env.local
+# 3. Copy the environment template
+cp .env.example .env
+```
 
+### Environment Configuration
+
+Open `.env` and follow the **6 numbered steps** embedded in the file. Each step includes precise instructions:
+
+| Step | Variable(s) | What to do |
+|---|---|---|
+| **1** | `STELLAR_NETWORK`, `STELLAR_HORIZON_URL` | Leave as-is for testnet development |
+| **2** | `STELLAR_USDC_ISSUER`, `STELLAR_EURC_ISSUER` | Add issuer public keys for non-XLM assets (optional for dev) |
+| **3** | `DATABASE_URL` | Get your `postgresql://` connection string from Supabase |
+| **4** | `JWT_SECRET` | Generate with `openssl rand -base64 32` |
+| **5** | `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Get from Cloudflare Turnstile dashboard (optional for dev) |
+| **6** | `NEXT_PUBLIC_APP_URL` | Set to `http://localhost:3000` for local dev |
+
+### Database Setup
+
+Once `DATABASE_URL` is configured in `.env`:
+
+```bash
+# For a fresh development database (creates tables from schema)
+npx prisma db push
+
+# OR for an existing database with migrations
+npx prisma migrate deploy
+
+# Generate the Prisma client (runs automatically on npm install)
+npx prisma generate
+```
+
+> **⚠️ Important:** In your Supabase project, enable **"Enforce Foreign Keys"** under *Project Settings → Database*. Supabase has this off by default on some plans, and the Prisma schema relies on it.
+
+### Running the Application
+
+```bash
 # Start the development server
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000) in your browser. The app will automatically:
+- Connect to the Stellar testnet (funded via Friendbot)
+- Use your Supabase Postgres database
+- Skip Turnstile verification if keys aren't set (dev mode)
 
 ### Available Scripts
 
 | Command | Description |
 |---|---|
-| `npm run dev` | Start development server |
-| `npm run build` | Build for production |
-| `npm run start` | Start production server |
-| `npm run lint` | Run ESLint |
+| `npm run dev` | Start the development server with hot reload |
+| `npm run build` | Build the application for production |
+| `npm run start` | Start the production server |
+| `npm run lint` | Run ESLint across the codebase |
+| `npx prisma studio` | Open Prisma Studio to inspect the database |
+| `npx prisma db push` | Sync the Prisma schema to the database |
+| `npx prisma migrate deploy` | Apply database migrations |
 
 ---
 
-## Project Structure
+## 🔐 Environment Variables
+
+All environment variables are documented in `.env.example` with step-by-step setup instructions. Here's the complete reference:
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `STELLAR_NETWORK` | ✅ | `testnet` | Stellar network: `testnet` (dev) or `public` (mainnet — real funds!) |
+| `STELLAR_HORIZON_URL` | ✅ | `https://horizon-testnet.stellar.org` | Horizon API endpoint for the configured network |
+| `STELLAR_USDC_ISSUER` | ⚠️ | — | Public key of the USDC issuing account (required for USDC corridors) |
+| `STELLAR_EURC_ISSUER` | ⚠️ | — | Public key of the EURC issuing account (required for EURC corridors) |
+| `DATABASE_URL` | ✅ | — | `postgresql://` connection string for Supabase Postgres |
+| `JWT_SECRET` | ✅ | — | Secret for signing session JWTs. Generate with `openssl rand -base64 32` |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | ⚠️ | — | Cloudflare Turnstile site key (public, shipped to browser) |
+| `TURNSTILE_SECRET_KEY` | ⚠️ | — | Cloudflare Turnstile secret key (server-only) |
+| `NEXT_PUBLIC_APP_URL` | ✅ | `http://localhost:3000` | Public URL the app is served from |
+
+> **Legend:** ✅ Required · ⚠️ Required for production / specific features
+
+---
+
+## 📡 API Reference
+
+### Authentication
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `POST` | `/api/auth/register` | Create a new user account | Public |
+| `POST` | `/api/auth/login` | Authenticate and create a session | Public |
+| `POST` | `/api/auth/logout` | Destroy the current session | Session |
+| `GET` | `/api/auth/me` | Get the current authenticated user | Session |
+
+### Stellar
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `POST` | `/api/stellar/account` | Create a Stellar testnet account (Friendbot) | Session |
+| `GET` | `/api/stellar/rate` | Fetch a live exchange rate | Session |
+| `POST` | `/api/stellar/send` | Build a path payment transaction | Session |
+| `POST` | `/api/stellar/submit` | Submit a signed transaction to Horizon | Session |
+
+### Data
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `GET` | `/api/anchors` | List SEP-24 anchors with fee comparison | Session |
+| `GET` | `/api/transactions` | List the user's transaction history | Session |
+| `GET` | `/api/public/*` | Public endpoints (rates, network status) | Public |
+
+---
+
+## 📁 Project Structure
 
 ```
 RemitX/
-├── public/                  # Static assets (favicon, images)
+├── contracts/
+│   └── escrow/                  # Soroban smart contract (Rust)
+│       ├── Cargo.toml
+│       └── src/
+│           ├── lib.rs           # deposit / release / refund / get_escrow
+│           └── test.rs          # Unit tests
+├── prisma/
+│   └── schema.prisma            # Database schema (User, Transaction, Rate, Escrow)
+├── public/                      # Static assets
 ├── src/
-│   ├── app/                 # Next.js App Router pages
-│   │   ├── (app)/           # Authenticated app layout group
-│   │   │   ├── activity/    # Transaction history
-│   │   │   ├── anchors/     # Anchor comparison & management
-│   │   │   ├── dashboard/   # Main dashboard
-│   │   │   ├── rates/       # DEX rate monitor
-│   │   │   ├── review/      # Transaction review
-│   │   │   ├── routes/      # Path payment routing
-│   │   │   ├── send/        # Send money flow
-│   │   │   └── layout.tsx   # Authenticated layout
-│   │   ├── favicon.ico
-│   │   ├── globals.css      # Global styles & Tailwind
-│   │   ├── layout.tsx       # Root layout (metadata, fonts)
-│   │   └── page.tsx         # Landing page
-│   └── components/          # Shared UI components
-│       ├── Header.tsx       # App header / navigation
-│       └── Sidebar.tsx      # App sidebar navigation
-├── .env.example             # Environment variable template
+│   ├── app/                     # Next.js App Router
+│   │   ├── (app)/               # Authenticated route group
+│   │   │   ├── activity/        # Transaction history
+│   │   │   ├── anchors/         # Anchor comparison & management
+│   │   │   ├── dashboard/       # Main dashboard
+│   │   │   ├── rates/           # DEX rate monitor
+│   │   │   ├── review/          # Transaction review & confirmation
+│   │   │   ├── routes/          # Path payment routing
+│   │   │   ├── send/            # Send money flow
+│   │   │   ├── support/         # Support center
+│   │   │   └── layout.tsx       # Authenticated layout (Header + Sidebar)
+│   │   ├── api/                 # API routes
+│   │   │   ├── anchors/         # Anchor directory endpoints
+│   │   │   ├── auth/            # Register / login / logout / me
+│   │   │   ├── public/          # Public endpoints
+│   │   │   ├── stellar/         # Account / rate / send / submit
+│   │   │   └── transactions/    # Transaction history
+│   │   ├── legal/               # Legal pages (dynamic [slug])
+│   │   ├── login/               # Login & registration page
+│   │   ├── globals.css          # Global styles & Tailwind
+│   │   ├── layout.tsx           # Root layout (metadata, fonts)
+│   │   └── page.tsx             # Landing page
+│   ├── components/              # Shared UI components
+│   │   ├── Header.tsx           # App header / navigation
+│   │   ├── Sidebar.tsx          # App sidebar navigation
+│   │   └── TurnstileWidget.tsx  # Cloudflare Turnstile widget
+│   ├── generated/               # Generated Prisma client
+│   ├── lib/                     # Core libraries
+│   │   ├── anchors.ts           # Curated SEP-24 anchor directory
+│   │   ├── api-response.ts      # Standardized API response helpers
+│   │   ├── auth.ts              # Password hashing & session management
+│   │   ├── db.ts                # Prisma singleton client
+│   │   ├── jwt.ts               # JWT verification (middleware-safe)
+│   │   ├── rates.ts             # Live rate engine (CoinGecko + ExchangeRate-API)
+│   │   ├── stellar.ts           # Stellar SDK integration
+│   │   ├── turnstile.ts         # Cloudflare Turnstile verification
+│   │   └── validations.ts       # Zod validation schemas
+│   └── middleware.ts            # JWT session protection
+├── .env.example                 # Environment template with instructions
 ├── .gitignore
-├── eslint.config.mjs        # ESLint configuration
-├── next.config.ts           # Next.js configuration
+├── eslint.config.mjs            # ESLint configuration
+├── next.config.ts               # Next.js configuration
 ├── package.json
-├── postcss.config.mjs       # PostCSS configuration
-├── tsconfig.json            # TypeScript configuration
+├── postcss.config.mjs           # PostCSS configuration
+├── prisma.config.ts             # Prisma configuration
+├── tsconfig.json                # TypeScript configuration
+├── vercel.json                  # Vercel deployment configuration
 └── README.md
 ```
 
 ---
 
-## Architecture
+## 🧩 Smart Contract (Soroban Escrow)
 
-RemitX follows a **Next.js App Router** architecture with a clear separation between public and authenticated routes.
+The `contracts/escrow/` directory contains a **Soroban smart contract** that provides optional escrow protection for remittance transfers.
 
-```
-┌─────────────────────────────────────────────────────┐
-│                    Client (Next.js)                  │
-│  ┌──────────┐  ┌──────────┐  ┌───────────────────┐  │
-│  │ Landing  │  │ Dashboard│  │ Send / Routes /   │  │
-│  │  Page    │  │          │  │ Anchors / Rates   │  │
-│  └──────────┘  └──────────┘  └───────────────────┘  │
-│                      │                               │
-│              ┌───────┴───────┐                       │
-│              │  Stellar SDK  │                       │
-│              │  (Horizon)    │                       │
-│              └───────┬───────┘                       │
-└──────────────────────┼──────────────────────────────┘
-                       │
-              ┌────────┴────────┐
-              │  Stellar Network │
-              │  (Horizon API)   │
-              └────────┬────────┘
-                       │
-              ┌────────┴────────┐
-              │  SEP-24 Anchors  │
-              │  (Off-ramps)     │
-              └─────────────────┘
-```
+### Contract Interface
 
-### Key Design Decisions
-
-- **App Router** — Uses Next.js 16 App Router for nested layouts, server components, and route groups.
-- **Route Groups** — The `(app)` route group wraps all authenticated pages with a shared layout (Header + Sidebar).
-- **Client Components** — Interactive pages (dashboard, send, rates) use `"use client"` for state and effects.
-- **Stellar Integration** — Direct Horizon API calls from the client for path payments and rate queries.
-- **Mobile-First** — Responsive design with Tailwind breakpoints, optimised for mobile wallets.
-
----
-
-## Routes
-
-| Route | Description | Auth Required |
+| Function | Status | Description |
 |---|---|---|
-| `/` | Landing page | No |
-| `/dashboard` | Main dashboard with portfolio overview | Yes |
-| `/send` | Send money flow (amount, currency, recipient) | Yes |
-| `/routes` | Path payment routing & comparison | Yes |
-| `/anchors` | Anchor fee comparison & management | Yes |
-| `/rates` | DEX rate monitor with alerts | Yes |
-| `/review` | Transaction review & confirmation | Yes |
-| `/activity` | Transaction history & status | Yes |
+| `deposit(sender, recipient, amount, asset, expires_at)` | 🚧 Stub | Locks funds in escrow, returns escrow ID |
+| `release(escrow_id)` | 🚧 Stub | Releases funds to recipient |
+| `refund(escrow_id)` | 🚧 Stub | Refunds funds to sender after expiry |
+| `get_escrow(escrow_id)` | ✅ Implemented | Read-only state getter |
 
----
+### Open Design Question
 
-## Environment Variables
+The **release authorization mechanism** is deliberately left as an open design decision. Candidate approaches include:
 
-Create a `.env.local` file in the project root by copying the template:
+1. **Backend-signed authorization** — simplest, works with existing app flow
+2. **Multi-sig (sender + recipient)** — truly decentralized, but requires both parties online
+3. **Oracle / timelock hybrid** — best UX, most complex
+
+See [`contracts/escrow/README.md`](contracts/escrow/README.md) for the full discussion.
+
+### Build & Test
 
 ```bash
-cp .env.example .env.local
-```
-
-### Available Variables
-
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `STELLAR_NETWORK` | Yes | `testnet` | Set to `mainnet` to connect to Stellar mainnet (uses real funds!). Leave unset or set to `testnet` for safe testing. |
-| `HORIZON_URL` | No | _(auto)_ | Custom Horizon endpoint. Defaults to the public testnet or mainnet endpoint based on `STELLAR_NETWORK`. |
-| `STELLAR_PUBLIC_KEY` | No | _(auto)_ | Freighter wallet public key. Auto-detected from the Freighter browser extension. |
-| `PORT` | No | `3000` | Server port for the Next.js development server. |
-
-### Example `.env.local`
-
-```env
-# Stellar Network Configuration
-# Set to "mainnet" to connect to Stellar mainnet (uses real funds!)
-# Leave unset or set to "testnet" for safe testing
-STELLAR_NETWORK=testnet
-
-# Optional: Custom Horizon endpoint (defaults to public testnet/mainnet)
-# HORIZON_URL=https://horizon-testnet.stellar.org
-
-# Optional: Freighter wallet public key (auto-detected from extension)
-# STELLAR_PUBLIC_KEY=
-
-# Server port (default: 3000)
-PORT=3000
+cd contracts/escrow
+cargo build
+cargo test
 ```
 
 ---
 
-## Contributing
+## 🛡️ Security
 
-Contributions are welcome! Please follow these steps:
+RemitX implements defense-in-depth security practices:
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+| Layer | Protection |
+|---|---|
+| **Authentication** | bcrypt password hashing (12 rounds), JWT sessions in httpOnly cookies |
+| **Bot Protection** | Cloudflare Turnstile on login and registration |
+| **Route Protection** | Middleware-level JWT verification on all authenticated routes |
+| **Input Validation** | Zod schema validation on every API route |
+| **Data Isolation** | All queries filtered by `userId` from the verified JWT |
+| **Secret Management** | Environment variables git-ignored, never committed |
+| **Cookie Security** | `httpOnly`, `secure` (production), `sameSite: lax` |
+| **Network Safety** | Testnet by default — mainnet requires explicit opt-in |
+
+---
+
+## 🚀 Deployment
+
+### Deploying to Vercel
+
+1. Push your repository to GitHub
+2. Import it into [Vercel](https://vercel.com)
+3. Add all environment variables from `.env` in **Project Settings → Environment Variables**
+4. Deploy — `vercel.json` is already configured for Next.js
+
+### Production Checklist
+
+- [ ] Set `STELLAR_NETWORK=public` and `STELLAR_HORIZON_URL=https://horizon.stellar.org` *(only after audit)*
+- [ ] Configure real asset issuers (`STELLAR_USDC_ISSUER`, etc.)
+- [ ] Set Cloudflare Turnstile keys
+- [ ] Generate a fresh `JWT_SECRET`
+- [ ] Set `NEXT_PUBLIC_APP_URL` to your production domain
+- [ ] Run `npx prisma migrate deploy` against the production database
+- [ ] Enable "Enforce Foreign Keys" in Supabase
+
+---
+
+## 🤝 Contributing
+
+Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+### Getting Started
+
+1. **Fork** the repository
+2. **Clone** your fork: `git clone https://github.com/<your-username>/RemitX.git`
+3. **Create** a feature branch: `git checkout -b feature/amazing-feature`
+4. **Commit** your changes: `git commit -m 'feat: add amazing feature'`
+5. **Push** to the branch: `git push origin feature/amazing-feature`
+6. **Open** a Pull Request
 
 ### Development Guidelines
 
-- Use TypeScript for all new code
-- Follow the existing component structure
+- Use **TypeScript** for all new code
+- Follow the existing component and file structure
 - Run `npm run lint` before committing
-- Test on both desktop and mobile viewports
+- Validate all API inputs with **Zod**
+- Test on both **desktop and mobile** viewports
+- Keep environment variables documented in `.env.example`
+
+### Looking for a place to start?
+
+Check the [`FOUNDATION.md`](FOUNDATION.md) file — it contains a complete list of `// TODO(contributor)` markers with clear descriptions of what needs to be implemented, including:
+
+- Real Stellar transaction building and submission
+- Live Horizon rate fetching with database caching
+- KYC document upload and verification flow
+- Soroban escrow contract implementation
+- Wiring frontend pages to API routes
 
 ---
 
-## License
+## 📄 License
 
-Distributed under the **MIT License**. See `LICENSE` for more information.
+Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more information.
 
 ---
 
-<p align="center">
-  Built on the <a href="https://stellar.org">Stellar Network</a> 🌟
-</p>
+<div align="center">
+
+**Built on the [Stellar Network](https://stellar.org) 🌟**
+
+*RemitX — Moving money across borders, at the speed of light.*
+
+</div>
