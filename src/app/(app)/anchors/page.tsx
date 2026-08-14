@@ -90,7 +90,7 @@ export default function AnchorsPage() {
             </nav>
             <h2 className="text-xl lg:text-2xl font-bold text-primary">Anchor Fee Comparison</h2>
             <p className="text-sm text-gray-500 mt-0.5">
-              Curated SEP-24 anchor directory — fees updated as we onboard and audit anchors.
+              Curated SEP-24 anchor directory - fees updated as we onboard and audit anchors.
             </p>
           </div>
           <div className="flex items-center gap-2">

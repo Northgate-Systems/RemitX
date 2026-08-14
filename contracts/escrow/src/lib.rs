@@ -6,7 +6,7 @@
 //!
 //! # Open Design Question: What authorizes `release()`?
 //!
-//! This is deliberately not implemented here — it's intended as a design
+//! This is deliberately not implemented here - it's intended as a design
 //! issue for an external contributor (via GrantFox). Candidate approaches:
 //!
 //! 1. **Backend-signed auth**: The RemitX backend signs a release

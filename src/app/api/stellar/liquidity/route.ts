@@ -6,7 +6,7 @@ import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-
 
 /** Real Horizon liquidity pool reserves for a given asset code (top pool by
  * reserve size). Returns null data if the asset has no configured issuer or
- * no pool exists — never a fabricated figure. */
+ * no pool exists - never a fabricated figure. */
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();

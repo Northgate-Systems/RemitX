@@ -173,7 +173,7 @@ export default function TransactionDetailPage() {
             </p>
             <button
               disabled
-              title="Escrow release authorization isn't implemented yet — see contracts/escrow/README.md"
+              title="Escrow release authorization isn't implemented yet - see contracts/escrow/README.md"
               className="w-full py-2.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-400 cursor-not-allowed"
             >
               Release (pending authorization design)

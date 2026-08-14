@@ -11,7 +11,7 @@
  *                              KES, ZAR, EUR, GBP and 150+ currencies
  *                              against USD)
  *
- * Cache: In-memory Map with 5-minute TTL — NO DATABASE NEEDED.
+ * Cache: In-memory Map with 5-minute TTL - NO DATABASE NEEDED.
  * Fallback chain: Memory cache → API fetch → "1.00"
  */
 
@@ -50,7 +50,7 @@ function getCachedRate(from: string, to: string): CacheEntry | null {
   if (!entry) return null;
   const age = Date.now() - entry.fetchedAt;
   if (age < CACHE_TTL_MS) return entry;
-  // Expired — remove it
+  // Expired - remove it
   rateCache.delete(cacheKey(from, to));
   return null;
 }
@@ -67,7 +67,7 @@ function setCachedRate(from: string, to: string, rate: string): void {
 // ---------------------------------------------------------------------------
 
 /**
- * CoinGecko simple/price — returns USD value for given coin IDs.
+ * CoinGecko simple/price - returns USD value for given coin IDs.
  * https://docs.coingecko.com/reference/simple-price
  */
 const COINGECKO_BASE = "https://api.coingecko.com/api/v3";
@@ -101,7 +101,7 @@ async function fetchCryptoUsdRate(assetCode: string): Promise<number | null> {
 }
 
 /**
- * ExchangeRate-API — FREE forex rates, NO API KEY required.
+ * ExchangeRate-API - FREE forex rates, NO API KEY required.
  * https://github.com/exchangerate-api/exchangerate-api
  *
  * Supports ALL African currencies: NGN, XAF, XOF, GHS, KES, ZAR, etc.
@@ -145,7 +145,7 @@ async function fetchAllFiatRates(): Promise<Record<string, number> | null> {
  * Returns how much 1 unit of `currencyCode` is worth in USD.
  *
  * ExchangeRate-API's /latest/USD response gives rates in the OPPOSITE
- * direction — e.g. rates.NGN ≈ 1600 means "1 USD = 1600 NGN", not
+ * direction - e.g. rates.NGN ≈ 1600 means "1 USD = 1600 NGN", not
  * "1 NGN = 1600 USD". Every non-USD lookup must be inverted to get the
  * "1 unit → USD" value that resolveRateThroughUsd() expects (matching what
  * fetchCryptoUsdRate already returns for crypto assets).

@@ -13,11 +13,11 @@ const PAGES: Record<string, { title: string; body: string }> = {
   },
   compliance: {
     title: "Compliance",
-    body: "RemitX has not yet completed KYC/AML or regulatory review in any jurisdiction. No real funds move through this product today — it operates on Stellar testnet only.",
+    body: "RemitX has not yet completed KYC/AML or regulatory review in any jurisdiction. No real funds move through this product today - it operates on Stellar testnet only.",
   },
   security: {
     title: "Security",
-    body: "Found a security issue? Please report it via the Support page rather than a public GitHub issue. RemitX is pre-audit and testnet-only — do not use real Stellar secret keys with this product.",
+    body: "Found a security issue? Please report it via the Support page rather than a public GitHub issue. RemitX is pre-audit and testnet-only - do not use real Stellar secret keys with this product.",
   },
 };
 

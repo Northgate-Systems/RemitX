@@ -2,7 +2,7 @@
  * Cloudflare Turnstile verification.
  *
  * Requires TURNSTILE_SECRET_KEY (server) and NEXT_PUBLIC_TURNSTILE_SITE_KEY
- * (client) — see .env.example for how to get both from the Cloudflare
+ * (client) - see .env.example for how to get both from the Cloudflare
  * dashboard. Without a configured secret key, verification is skipped in
  * development so `npm run dev` still works before you've set real keys;
  * it's enforced as soon as TURNSTILE_SECRET_KEY is set.
@@ -18,7 +18,7 @@ export async function verifyTurnstileToken(token: string | undefined | null): Pr
 
   if (!secret) {
     console.warn(
-      "[turnstile] TURNSTILE_SECRET_KEY not set — skipping verification. Set it in .env before going to production."
+      "[turnstile] TURNSTILE_SECRET_KEY not set - skipping verification. Set it in .env before going to production."
     );
     return { success: true };
   }

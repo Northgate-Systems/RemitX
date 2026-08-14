@@ -41,7 +41,7 @@ export default function TurnstileWidget({ onVerify, onExpire }: TurnstileWidgetP
 
   useEffect(() => {
     if (!SITE_KEY) {
-      // Nothing configured yet — don't block local development on it.
+      // Nothing configured yet - don't block local development on it.
       onVerify("dev-skip-no-site-key");
       return;
     }
@@ -86,7 +86,7 @@ export default function TurnstileWidget({ onVerify, onExpire }: TurnstileWidgetP
   if (!SITE_KEY) {
     return (
       <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
-        Cloudflare Turnstile isn&apos;t configured yet — set{" "}
+        Cloudflare Turnstile isn&apos;t configured yet - set{" "}
         <code className="font-mono">NEXT_PUBLIC_TURNSTILE_SITE_KEY</code> in .env to enable
         verification. Continuing without it for now.
       </div>

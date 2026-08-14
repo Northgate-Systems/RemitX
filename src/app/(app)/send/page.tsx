@@ -193,7 +193,7 @@ export default function SendMoneyPage() {
                   <div className="flex justify-between items-center text-sm opacity-80">
                     <span>Exchange Rate</span>
                     <span className={`font-semibold transition-colors duration-700 ${justUpdated ? "text-emerald-300" : ""}`}>
-                      {rateLoading ? "Loading…" : rate ? `1 ${fromAsset} = ${parseFloat(rate).toFixed(4)} ${toAsset}` : "—"}
+                      {rateLoading ? "Loading…" : rate ? `1 ${fromAsset} = ${parseFloat(rate).toFixed(4)} ${toAsset}` : "-"}
                     </span>
                   </div>
                   {rateUpdatedAt && (

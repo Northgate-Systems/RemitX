@@ -4,7 +4,7 @@ import { rateQuerySchema } from "@/lib/validations";
 import { successResponse, errorResponse } from "@/lib/api-response";
 
 /**
- * Public, unauthenticated rate lookup — same market data as
+ * Public, unauthenticated rate lookup - same market data as
  * /api/stellar/rate, just without requiring a session. Used by the landing
  * page so visitors see real live rates before signing in. Read-only, no
  * user-specific data, so it's safe to expose without auth.

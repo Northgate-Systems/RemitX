@@ -1,27 +1,27 @@
-# RemitX Foundation Build — Summary
+# RemitX Foundation Build - Summary
 
 This document summarizes what was built during the foundation phase, what's left as intentional stubs for contributors, and every `// TODO(contributor)` left in the codebase.
 
 ## ✅ Fully Working
 
-### Phase 2 — Data Layer
+### Phase 2 - Data Layer
 - **Prisma schema** with 4 models: `User`, `Transaction`, `Rate`, `Escrow`
 - Models include proper enums, relations, indexes, and CockroachDB-compatible defaults
 - Prisma Client generated to `src/generated/prisma/`
 - Singleton `db` client in `src/lib/db.ts` with `@prisma/adapter-pg`
 
-### Phase 3 — Auth
+### Phase 3 - Auth
 - **API routes:** `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`
 - bcrypt password hashing + JWT in httpOnly cookies
 - **Middleware** (`src/middleware.ts`) protects all `src/app/(app)/*` routes, redirects to `/login`
 - **Login page** at `/login` with toggle between sign-in and registration
 - All routes filter by `userId` from the verified JWT
-- `kycStatus` field exists but no KYC flow — `// TODO(contributor): implement KYC document upload/verification flow`
+- `kycStatus` field exists but no KYC flow - `// TODO(contributor): implement KYC document upload/verification flow`
 
 ## 🧩 Stubs for Contributors
 
-### Phase 4 — Stellar Integration (API route skeletons)
-These routes have correct function signatures, Zod validation, user auth, and Stellar SDK setup — but the actual Horizon/transaction logic is stubbed:
+### Phase 4 - Stellar Integration (API route skeletons)
+These routes have correct function signatures, Zod validation, user auth, and Stellar SDK setup - but the actual Horizon/transaction logic is stubbed:
 
 | Route | Status | File |
 |-------|--------|------|
@@ -32,13 +32,13 @@ These routes have correct function signatures, Zod validation, user auth, and St
 
 The underlying Stellar SDK functions in `src/lib/stellar.ts` are also stubbed with mock responses and clear TODOs.
 
-### Phase 5 — Soroban Escrow Contract
+### Phase 5 - Soroban Escrow Contract
 - **Location:** `contracts/escrow/`
 - **Structure:** Standard Soroban project (`Cargo.toml`, `src/lib.rs`, `src/test.rs`)
-- **What's implemented:** `get_escrow()` — fully works, simple storage read
+- **What's implemented:** `get_escrow()` - fully works, simple storage read
 - **What's stubbed:** `deposit()` (token transfer + escrow ID gen), `release()` (authorization mechanism), `refund()` (time-check + transfer)
 - **Open design question:** What authorizes `release()`? See `contracts/escrow/README.md` for candidate approaches. Deliberately unresolved.
-- **Not deployed** — scaffold only
+- **Not deployed** - scaffold only
 
 ### Frontend Pages (not wired)
 All four app pages are static/mocked:
@@ -53,11 +53,11 @@ Each has a `// TODO(contributor)` comment describing exactly what needs to be wi
 
 | # | File | TODO |
 |---|------|------|
-| 1 | `src/lib/stellar.ts:33` | Implement `createTestnetAccount()` — generate keypair, fund via Friendbot |
+| 1 | `src/lib/stellar.ts:33` | Implement `createTestnetAccount()` - generate keypair, fund via Friendbot |
 | 2 | `src/lib/stellar.ts:62` | Implement Horizon polling/streaming for stuck pending transactions |
-| 3 | `src/lib/stellar.ts:69` | Implement `fetchRate()` — live Horizon path-payment quote + caching |
-| 4 | `src/lib/stellar.ts:80` | Implement `buildSendTransaction()` — load account, build XDR, check balance |
-| 5 | `src/lib/stellar.ts:98` | Implement `submitTransaction()` — parse XDR, submit to Horizon, handle errors |
+| 3 | `src/lib/stellar.ts:69` | Implement `fetchRate()` - live Horizon path-payment quote + caching |
+| 4 | `src/lib/stellar.ts:80` | Implement `buildSendTransaction()` - load account, build XDR, check balance |
+| 5 | `src/lib/stellar.ts:98` | Implement `submitTransaction()` - parse XDR, submit to Horizon, handle errors |
 | 6 | `src/app/api/stellar/account/route.ts:16` | Real keypair gen + Friendbot + store publicKey |
 | 7 | `src/app/api/stellar/rate/route.ts:33` | Real Horizon rate fetch + Rate table caching |
 | 8 | `src/app/api/stellar/send/route.ts:45` | Real rate → XDR build → DB store + balance check |

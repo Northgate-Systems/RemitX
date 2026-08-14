@@ -151,7 +151,7 @@ function ActivityInner() {
                       </td>
                       <td className="px-4 lg:px-5 py-3 text-right">
                         <p className="text-sm font-semibold text-gray-800">
-                          {tx.toAmount ? `${tx.toAmount} ${tx.toAsset}` : "—"}
+                          {tx.toAmount ? `${tx.toAmount} ${tx.toAsset}` : "-"}
                         </p>
                       </td>
                       <td className="px-4 lg:px-5 py-3">

@@ -273,7 +273,7 @@ export default function RatesPage() {
             <div className="h-[180px] lg:h-[250px] w-full">
               {activeHistory.length < 2 ? (
                 <div className="flex items-center justify-center h-full text-xs text-gray-400">
-                  Watching for rate changes — chart fills in as updates come in.
+                  Watching for rate changes - chart fills in as updates come in.
                 </div>
               ) : (
                 (() => {

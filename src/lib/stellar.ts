@@ -21,7 +21,7 @@ export const server = new Horizon.Server(HORIZON_URL);
 // Real Horizon calls throughout. The one thing that can't be invented here:
 // non-native assets (USDC, NGNT, etc.) need a real issuing account, which
 // only exists once you've picked real anchors. Configure issuers via env
-// (STELLAR_<CODE>_ISSUER) as corridors go live — resolveAsset() below throws
+// (STELLAR_<CODE>_ISSUER) as corridors go live - resolveAsset() below throws
 // a clear, actionable error for any asset that isn't configured yet, rather
 // than silently using a fake issuer.
 // ---------------------------------------------------------------------------

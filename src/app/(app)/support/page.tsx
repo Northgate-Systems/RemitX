@@ -6,7 +6,7 @@ export default function SupportPage() {
       <div className="max-w-3xl mx-auto px-4 lg:px-6 py-6 lg:py-8 space-y-4">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-primary mb-1">Support</h2>
-          <p className="text-sm text-gray-500">RemitX is on Stellar testnet — here&apos;s where to go if something&apos;s wrong.</p>
+          <p className="text-sm text-gray-500">RemitX is on Stellar testnet - here&apos;s where to go if something&apos;s wrong.</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

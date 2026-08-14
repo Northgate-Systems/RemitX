@@ -49,7 +49,7 @@ export default function LandingPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Real, always-live currency rates — no static/example numbers.
+  // Real, always-live currency rates - no static/example numbers.
   useEffect(() => {
     let ignore = false;
 

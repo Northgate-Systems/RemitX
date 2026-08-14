@@ -12,7 +12,7 @@ function resolvePathAsset(code: string): Asset {
   return new Asset(upper, issuer);
 }
 
-/** Real Stellar path-finding via Horizon's /paths/strict-send — returns the
+/** Real Stellar path-finding via Horizon's /paths/strict-send - returns the
  * actual on-chain routes available right now for a given send amount, no
  * fabricated providers or fee tables. */
 export async function GET(request: NextRequest) {

@@ -1,7 +1,7 @@
 /**
  * Curated anchor directory for RemitX.
  *
- * There's no single live registry of SEP-24 anchor fees across corridors —
+ * There's no single live registry of SEP-24 anchor fees across corridors -
  * every remittance product that shows this kind of comparison maintains its
  * own directory and updates it as it onboards/audits anchors. This file is
  * that directory. Treat it like content, not a stub: add a real anchor here

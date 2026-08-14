@@ -11,7 +11,7 @@ import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-
 // extension (e.g. Freighter). The secret key is used in-memory for this
 // request only and is never stored or logged.
 //
-// Do NOT use this pattern on mainnet or with real funds — swap in a browser
+// Do NOT use this pattern on mainnet or with real funds - swap in a browser
 // wallet extension for signing before going to production.
 // ---------------------------------------------------------------------------
 

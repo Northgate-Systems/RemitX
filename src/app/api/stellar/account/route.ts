@@ -22,14 +22,14 @@ export async function POST() {
     });
 
     // The secret key is returned exactly once, here, and never stored
-    // server-side. If the user loses it, this testnet account is gone —
+    // server-side. If the user loses it, this testnet account is gone -
     // that's the correct tradeoff for a non-custodial wallet, even in dev.
     return successResponse(
       {
         publicKey: account.publicKey,
         secretKey: account.secretKey,
         warning:
-          "Save this secret key now — it will not be shown again and is not stored on the server.",
+          "Save this secret key now - it will not be shown again and is not stored on the server.",
       },
       201
     );

@@ -116,7 +116,7 @@ export default function DashboardPage() {
       const json = await res.json();
       if (res.ok) {
         window.alert(
-          `Testnet wallet created.\n\nSave your secret key now — it will not be shown again:\n\n${json.data.secretKey}`
+          `Testnet wallet created.\n\nSave your secret key now - it will not be shown again:\n\n${json.data.secretKey}`
         );
         setLoading(true);
         await loadData();
@@ -278,7 +278,7 @@ export default function DashboardPage() {
                           </td>
                           <td className="px-4 lg:px-5 py-3 text-right">
                             <p className="text-sm font-semibold text-gray-800">
-                              {tx.toAmount ? `${tx.toAmount} ${tx.toAsset}` : "—"}
+                              {tx.toAmount ? `${tx.toAmount} ${tx.toAsset}` : "-"}
                             </p>
                           </td>
                           <td className="px-4 lg:px-5 py-3">
@@ -315,7 +315,7 @@ export default function DashboardPage() {
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Network Status</h4>
                 <div className="flex items-center gap-1">
                   <div className={`w-1.5 h-1.5 rounded-full ${network ? "bg-emerald-400 animate-pulse" : "bg-gray-300"}`}></div>
-                  <span className="text-[10px] font-bold text-secondary">{network ? "Live" : "—"}</span>
+                  <span className="text-[10px] font-bold text-secondary">{network ? "Live" : "-"}</span>
                 </div>
               </div>
               {network ? (

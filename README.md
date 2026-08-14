@@ -1,4 +1,4 @@
-# RemitX — Official Documentation
+# RemitX - Official Documentation
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.2-000000?logo=next.js)](https://nextjs.org)
 [![Stellar](https://img.shields.io/badge/Stellar-Network-7B00FF?logo=stellar)](https://stellar.org)
@@ -37,7 +37,7 @@
 
 **RemitX** is a mobile-first decentralized application (dApp) built on the **Stellar Network** that revolutionizes cross-border remittances. By leveraging Stellar's lightning-fast settlement layer and path payment protocol, RemitX intelligently routes funds through the most cost-effective payment paths, comparing anchor fees in real time to guarantee the best exchange rates for corridors spanning Nigeria (NGN), the Philippines (PHP), the United Kingdom (GBP), and the United States (USD).
 
-RemitX is designed for the millions of people who send money home every month — the diaspora workers, the gig economy earners, the families supporting loved ones across borders. Traditional remittance channels charge exorbitant fees and take days to settle. RemitX delivers **sub-5-second settlement** at a **fraction of the cost**, powered by the Stellar Network's decentralized infrastructure.
+RemitX is designed for the millions of people who send money home every month - the diaspora workers, the gig economy earners, the families supporting loved ones across borders. Traditional remittance channels charge exorbitant fees and take days to settle. RemitX delivers **sub-5-second settlement** at a **fraction of the cost**, powered by the Stellar Network's decentralized infrastructure.
 
 ---
 
@@ -45,11 +45,11 @@ RemitX is designed for the millions of people who send money home every month �
 
 Cross-border remittances are a $700+ billion annual market, yet the people who depend on them most are served worst. Three core problems define the gap:
 
-**Exorbitant Fees** — Traditional remittance providers charge 5–10% per transaction. For a worker sending $200 home each month, that's $10–$20 lost to intermediaries every single time. Over a year, that's a significant portion of their earnings.
+**Exorbitant Fees** - Traditional remittance providers charge 5–10% per transaction. For a worker sending $200 home each month, that's $10–$20 lost to intermediaries every single time. Over a year, that's a significant portion of their earnings.
 
-**Slow Settlement** — International wire transfers take 3–5 business days to clear. When a family needs money for an emergency — a medical bill, school fees, a repair — waiting days is not an option.
+**Slow Settlement** - International wire transfers take 3–5 business days to clear. When a family needs money for an emergency - a medical bill, school fees, a repair - waiting days is not an option.
 
-**Opaque Pricing** — Exchange rates are hidden in the spread. Users rarely know the true cost of their transfer until it's too late. There is no transparent, side-by-side comparison of what different providers actually charge.
+**Opaque Pricing** - Exchange rates are hidden in the spread. Users rarely know the true cost of their transfer until it's too late. There is no transparent, side-by-side comparison of what different providers actually charge.
 
 RemitX addresses all three problems in a single, cohesive platform built on open, decentralized infrastructure.
 
@@ -59,11 +59,11 @@ RemitX addresses all three problems in a single, cohesive platform built on open
 
 RemitX creates a three-pillar ecosystem:
 
-**1. Route** — RemitX queries the Stellar Horizon API for optimal liquidity paths, automatically finding the cheapest route for every transfer. The path payment protocol ensures funds flow through the most cost-effective sequence of assets and markets.
+**1. Route** - RemitX queries the Stellar Horizon API for optimal liquidity paths, automatically finding the cheapest route for every transfer. The path payment protocol ensures funds flow through the most cost-effective sequence of assets and markets.
 
-**2. Compare** — A curated directory of vetted SEP-24 anchors provides real-time, side-by-side fee comparison. Users see exactly what each anchor charges before they commit — no hidden spreads, no surprise deductions.
+**2. Compare** - A curated directory of vetted SEP-24 anchors provides real-time, side-by-side fee comparison. Users see exactly what each anchor charges before they commit - no hidden spreads, no surprise deductions.
 
-**3. Settle** — Transactions finalize on the Stellar Network in seconds, not days. Funds move directly from sender to recipient through the decentralized ledger, with optional escrow protection via Soroban smart contracts for added safety.
+**3. Settle** - Transactions finalize on the Stellar Network in seconds, not days. Funds move directly from sender to recipient through the decentralized ledger, with optional escrow protection via Soroban smart contracts for added safety.
 
 ---
 
@@ -112,7 +112,7 @@ RemitX creates a three-pillar ecosystem:
 
 ## Smart Contract System
 
-RemitX includes an optional **Soroban escrow contract** that provides a safety net for remittance transfers. When a user sends money, the funds can be locked in escrow instead of being sent directly to the recipient — if something goes wrong (wrong address, delivery failure), the funds can be recovered after expiry.
+RemitX includes an optional **Soroban escrow contract** that provides a safety net for remittance transfers. When a user sends money, the funds can be locked in escrow instead of being sent directly to the recipient - if something goes wrong (wrong address, delivery failure), the funds can be recovered after expiry.
 
 ### Contract Interface
 
@@ -129,19 +129,19 @@ This is the most important unresolved issue and should be turned into a standalo
 
 #### Candidate Approaches
 
-**1. Backend-signed authorization (simplest)** — The RemitX backend holds a signing key. When the sender confirms the transaction, the backend signs a release message and submits it to the contract. The contract verifies the backend's public key.
+**1. Backend-signed authorization (simplest)** - The RemitX backend holds a signing key. When the sender confirms the transaction, the backend signs a release message and submits it to the contract. The contract verifies the backend's public key.
 
 *Pros:* Simple, works with the existing app flow, no extra on-chain complexity.
-*Cons:* Centralized — the backend has unilateral control over fund release.
+*Cons:* Centralized - the backend has unilateral control over fund release.
 
-**2. Multi-sig (sender + recipient both sign)** — Both the sender and recipient must authorize the release. The contract verifies both signatures.
+**2. Multi-sig (sender + recipient both sign)** - Both the sender and recipient must authorize the release. The contract verifies both signatures.
 
-*Pros:* Truly decentralized — neither party can unilaterally control funds.
+*Pros:* Truly decentralized - neither party can unilaterally control funds.
 *Cons:* Requires both parties to be online and cooperative. If the recipient disappears, funds are stuck until expiry.
 
-**3. Oracle / timelock hybrid** — A time lock releases funds automatically after the delivery window expires, OR an oracle (e.g., confirming fiat settlement via an anchor) can release early.
+**3. Oracle / timelock hybrid** - A time lock releases funds automatically after the delivery window expires, OR an oracle (e.g., confirming fiat settlement via an anchor) can release early.
 
-*Pros:* Best UX — funds always land somewhere.
+*Pros:* Best UX - funds always land somewhere.
 *Cons:* Most complex. Requires an oracle integration and careful edge-case handling.
 
 See [`contracts/escrow/README.md`](contracts/escrow/README.md) for the full discussion.
@@ -154,14 +154,14 @@ See [`contracts/escrow/README.md`](contracts/escrow/README.md) for the full disc
 - Creates an account and connects a Stellar wallet
 - Selects the send amount, source currency, and destination corridor
 - Reviews real-time anchor fee comparisons before committing
-- Confirms the transfer — funds settle on Stellar in seconds
+- Confirms the transfer - funds settle on Stellar in seconds
 - Optionally enables escrow protection for added safety
 
 ### Recipient
 - Receives funds directly to their Stellar wallet
 - Off-ramps through their preferred SEP-24 anchor
 - Tracks incoming transfers in real time
-- No account required to receive — just a Stellar public key
+- No account required to receive - just a Stellar public key
 
 ### Anchor
 - Listed in the curated SEP-24 anchor directory
@@ -200,7 +200,7 @@ Recipient Off-Ramps via SEP-24 Anchor
 Trust & Volume Grow ──▶ More Anchors Onboard ──▶ Better Rates ──▶ Loop Continues
 ```
 
-The more people use RemitX, the more anchors compete for their business, the better the rates become, and the more people switch from traditional remittance channels. **Speed is not the feature — the network effect is.**
+The more people use RemitX, the more anchors compete for their business, the better the rates become, and the more people switch from traditional remittance channels. **Speed is not the feature - the network effect is.**
 
 ---
 
@@ -217,7 +217,7 @@ RemitX implements defense-in-depth security practices:
 | **Data Isolation** | All queries filtered by `userId` from the verified JWT |
 | **Secret Management** | Environment variables git-ignored, never committed |
 | **Cookie Security** | `httpOnly`, `secure` (production), `sameSite: lax` |
-| **Network Safety** | Testnet by default — mainnet requires explicit opt-in after audit |
+| **Network Safety** | Testnet by default - mainnet requires explicit opt-in after audit |
 
 ---
 
@@ -241,7 +241,7 @@ RemitX implements defense-in-depth security practices:
 
 ## Roadmap
 
-### V1 — Foundation (Current Phase)
+### V1 - Foundation (Current Phase)
 
 - ✅ Prisma schema with 4 models (User, Transaction, Rate, Escrow)
 - ✅ Full authentication flow (register, login, logout, session)
@@ -252,7 +252,7 @@ RemitX implements defense-in-depth security practices:
 - ✅ Cloudflare Turnstile bot protection
 - ✅ Soroban escrow contract scaffold
 
-### V2 — Growth
+### V2 - Growth
 
 - 🚧 Wire frontend pages to live API routes
 - 🚧 Implement KYC document upload and verification flow
@@ -261,7 +261,7 @@ RemitX implements defense-in-depth security practices:
 - 🚧 Transaction history with real data
 - 🚧 Dashboard with real balances and analytics
 
-### V3 — Scale
+### V3 - Scale
 
 - 🎯 Mainnet deployment (after security audit)
 - 🎯 Additional corridors (XAF, XOF, GHS, KES, ZAR)
@@ -424,7 +424,7 @@ RemitX is an open-source project and welcomes contributions from developers, des
 
 ### Looking for a place to start?
 
-Check the [`FOUNDATION.md`](FOUNDATION.md) file — it contains a complete list of `// TODO(contributor)` markers with clear descriptions of what needs to be implemented, including:
+Check the [`FOUNDATION.md`](FOUNDATION.md) file - it contains a complete list of `// TODO(contributor)` markers with clear descriptions of what needs to be implemented, including:
 
 - Real Stellar transaction building and submission
 - Live Horizon rate fetching with database caching
@@ -436,10 +436,10 @@ Check the [`FOUNDATION.md`](FOUNDATION.md) file — it contains a complete list 
 
 ## Resources
 
-- [FOUNDATION.md](FOUNDATION.md) — Foundation build summary and contributor TODOs
-- [contracts/escrow/README.md](contracts/escrow/README.md) — Soroban escrow contract documentation
-- [.env.example](.env.example) — Environment variable template with setup instructions
-- [LICENSE](LICENSE) — MIT License
+- [FOUNDATION.md](FOUNDATION.md) - Foundation build summary and contributor TODOs
+- [contracts/escrow/README.md](contracts/escrow/README.md) - Soroban escrow contract documentation
+- [.env.example](.env.example) - Environment variable template with setup instructions
+- [LICENSE](LICENSE) - MIT License
 
 ---
 
@@ -452,4 +452,4 @@ For partnerships, sponsorships, or general questions about RemitX, please reach 
 
 ---
 
-**RemitX — Moving money across borders, at the speed of light. Built on the Stellar Network. 🌟**
+**RemitX - Moving money across borders, at the speed of light. Built on the Stellar Network. 🌟**
