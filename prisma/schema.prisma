@@ -1,0 +1,111 @@
+// Prisma schema for RemitX
+// Database: Supabase (Postgres)
+//
+// NOTE: This schema targets Supabase's Postgres-compatible backend.
+// - Uses cuid() for IDs (not autoincrement)
+// - All monetary amounts stored as strings to avoid precision loss
+// - Foreign keys are enforced by Postgres (enable them in Supabase project settings)
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum KycStatus {
+  pending
+  verified
+  rejected
+}
+
+enum TransactionStatus {
+  pending
+  validating
+  confirmed
+  failed
+}
+
+enum EscrowStatus {
+  locked
+  released
+  refunded
+  expired
+}
+
+model User {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  firstName        String
+  lastName         String
+  passwordHash     String
+  stellarPublicKey String?   @unique
+  kycStatus        KycStatus @default(pending)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  transactions     Transaction[]
+  escrows          Escrow[]
+
+  @@map("users")
+}
+
+model Transaction {
+  id               String            @id @default(cuid())
+  userId           String
+  fromAsset        String
+  toAsset          String
+  fromAmount       String            // stored as string to avoid precision loss with decimals
+  toAmount         String?
+  recipientAddress String
+  stellarTxHash    String?
+  escrowId         String?           // links to Escrow.id if this transaction uses the escrow contract
+  status           TransactionStatus @default(pending)
+  createdAt        DateTime          @default(now())
+  confirmedAt      DateTime?
+  updatedAt        DateTime          @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@map("transactions")
+}
+
+model Rate {
+  id        String   @id @default(cuid())
+  fromAsset String
+  toAsset   String
+  rate      String   // stored as string to avoid precision loss
+  fetchedAt DateTime @default(now())
+
+  @@unique([fromAsset, toAsset])
+  @@map("rates")
+}
+
+model Escrow {
+  id               String       @id @default(cuid())
+  userId           String
+  transactionId    String       @unique // one-to-one with Transaction
+  contractAddress  String       // Soroban contract address on Stellar
+  senderAddress    String       // Stellar public key of the sender
+  recipientAddress String       // Stellar public key of the recipient
+  amount           String       // stored as string to avoid precision loss
+  asset            String       // asset code (e.g. "USDC", "XLM")
+  status           EscrowStatus @default(locked)
+  depositTxHash    String?      // Stellar tx hash for the deposit to the contract
+  releaseTxHash    String?      // Stellar tx hash for the release from the contract
+  createdAt        DateTime     @default(now())
+  expiresAt        DateTime     // when the escrow expires and can be refunded
+  updatedAt        DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([senderAddress])
+  @@index([recipientAddress])
+  @@index([status])
+  @@map("escrows")
+}

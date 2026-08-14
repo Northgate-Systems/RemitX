@@ -1,0 +1,467 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --color-secondary-fixed-dim: #44ddc1;
+  --color-on-primary: #ffffff;
+  --color-surface-bright: #f7f9fc;
+  --color-inverse-on-surface: #eff1f4;
+  --color-secondary-fixed: #68fadd;
+  --color-surface-container-high: #e6e8eb;
+  --color-tertiary-container: #0d2187;
+  --color-tertiary-fixed: #dee0ff;
+  --color-on-primary-fixed-variant: #343d96;
+  --color-inverse-surface: #2d3133;
+  --color-tertiary: #000e5d;
+  --color-surface-container-highest: #e0e3e6;
+  --color-primary-container: #1a237e;
+  --color-surface-container-low: #f2f4f7;
+  --color-tertiary-fixed-dim: #bbc3ff;
+  --color-on-tertiary-container: #8090f6;
+  --color-secondary-container: #68fadd;
+  --color-surface-variant: #e0e3e6;
+  --color-on-secondary: #ffffff;
+  --color-on-secondary-container: #007261;
+  --color-on-tertiary: #ffffff;
+  --color-primary: #000666;
+  --color-error-container: #ffdad6;
+  --color-surface-tint: #4c56af;
+  --color-secondary: #006b5c;
+  --color-surface: #f7f9fc;
+  --color-surface-container-lowest: #ffffff;
+  --color-on-tertiary-fixed: #000e5e;
+  --color-surface-container: #eceef1;
+  --color-on-error: #ffffff;
+  --color-on-surface-variant: #454652;
+  --color-inverse-primary: #bdc2ff;
+  --color-outline-variant: #c6c5d4;
+  --color-outline: #767683;
+  --color-error: #ba1a1a;
+  --color-on-primary-fixed: #000767;
+  --color-on-error-container: #93000a;
+  --color-on-surface: #191c1e;
+  --color-on-secondary-fixed: #00201a;
+  --color-on-background: #191c1e;
+  --color-on-secondary-fixed-variant: #005145;
+  --color-surface-dim: #d8dadd;
+  --color-primary-fixed-dim: #bdc2ff;
+  --color-background: #f7f9fc;
+  --color-on-primary-container: #8690ee;
+  --color-primary-fixed: #e0e0ff;
+  --color-on-tertiary-fixed-variant: #2c3c9e;
+}
+
+@theme {
+  --font-body-sm: 'Inter', sans-serif;
+  --font-body-lg: 'Inter', sans-serif;
+  --font-display-lg: 'Inter', sans-serif;
+  --font-headline-md: 'Inter', sans-serif;
+  --font-body-md: 'Inter', sans-serif;
+  --font-headline-sm: 'Inter', sans-serif;
+  --font-label-md: 'Inter', sans-serif;
+  --font-headline-lg: 'Inter', sans-serif;
+  --font-headline-lg-mobile: 'Inter', sans-serif;
+  --font-label-sm: 'Inter', sans-serif;
+}
+
+@theme {
+  --text-body-sm: 14px;
+  --text-body-sm--line-height: 20px;
+  --text-body-sm--font-weight: 400;
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 28px;
+  --text-body-lg--font-weight: 400;
+  --text-display-lg: 48px;
+  --text-display-lg--line-height: 60px;
+  --text-display-lg--letter-spacing: -0.02em;
+  --text-display-lg--font-weight: 700;
+  --text-headline-md: 24px;
+  --text-headline-md--line-height: 32px;
+  --text-headline-md--font-weight: 600;
+  --text-body-md: 16px;
+  --text-body-md--line-height: 24px;
+  --text-body-md--font-weight: 400;
+  --text-headline-sm: 20px;
+  --text-headline-sm--line-height: 28px;
+  --text-headline-sm--font-weight: 600;
+  --text-label-md: 14px;
+  --text-label-md--line-height: 20px;
+  --text-label-md--font-weight: 600;
+  --text-headline-lg: 32px;
+  --text-headline-lg--line-height: 40px;
+  --text-headline-lg--letter-spacing: -0.01em;
+  --text-headline-lg--font-weight: 600;
+  --text-headline-lg-mobile: 28px;
+  --text-headline-lg-mobile--line-height: 36px;
+  --text-headline-lg-mobile--font-weight: 600;
+  --text-label-sm: 12px;
+  --text-label-sm--line-height: 16px;
+  --text-label-sm--letter-spacing: 0.05em;
+  --text-label-sm--font-weight: 600;
+}
+
+@theme {
+  --spacing-header-height: 72px;
+  --spacing-margin-desktop: 32px;
+  --spacing-space-lg: 24px;
+  --spacing-space-md: 16px;
+  --spacing-margin-mobile: 16px;
+  --spacing-sidebar-width: 280px;
+  --spacing-space-sm: 8px;
+  --spacing-space-xs: 4px;
+  --spacing-gutter: 24px;
+  --spacing-space-xl: 32px;
+  --spacing-max-content-width: 1440px;
+}
+
+@theme {
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
+}
+
+/* ============================================
+   GLASS CARD
+   ============================================ */
+.glass-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* ============================================
+   CUSTOM SCROLLBAR
+   ============================================ */
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #e0e3e6; border-radius: 10px; }
+
+/* ============================================
+   ORIGINAL ANIMATIONS (PRESERVED)
+   ============================================ */
+.stellar-line {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: dash 5s linear infinite;
+}
+@keyframes dash { to { stroke-dashoffset: 0; } }
+
+.float-animation {
+  animation: float 6s ease-in-out infinite;
+}
+@keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
+
+.step-pulse {
+  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes pulse-ring { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .5; transform: scale(1.1); } }
+
+/* ============================================
+   CINEMATIC PREMIUM ANIMATIONS
+   ============================================ */
+
+/* ---- Morphing Reveal ---- */
+@keyframes morphReveal {
+  0% { clip-path: circle(0% at 50% 50%); opacity: 0; }
+  100% { clip-path: circle(100% at 50% 50%); opacity: 1; }
+}
+.animate-morph-reveal {
+  animation: morphReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ---- 3D Card Tilt ---- */
+@keyframes cardTilt {
+  0% { transform: perspective(1000px) rotateY(0deg) rotateX(0deg); }
+  25% { transform: perspective(1000px) rotateY(2deg) rotateX(-1deg); }
+  50% { transform: perspective(1000px) rotateY(0deg) rotateX(0deg); }
+  75% { transform: perspective(1000px) rotateY(-2deg) rotateX(1deg); }
+  100% { transform: perspective(1000px) rotateY(0deg) rotateX(0deg); }
+}
+.animate-3d-tilt {
+  animation: cardTilt 8s ease-in-out infinite;
+}
+
+/* ---- Glow Pulse Border ---- */
+@keyframes glowBorder {
+  0%, 100% { box-shadow: 0 0 5px rgba(0, 107, 92, 0.2), 0 0 10px rgba(0, 107, 92, 0.1); }
+  50% { box-shadow: 0 0 20px rgba(0, 107, 92, 0.4), 0 0 40px rgba(0, 107, 92, 0.2); }
+}
+.animate-glow-border {
+  animation: glowBorder 3s ease-in-out infinite;
+}
+
+/* ---- Floating Particles ---- */
+@keyframes particleFloat {
+  0% { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(-100vh) translateX(50px) scale(0); opacity: 0; }
+}
+.animate-particle {
+  animation: particleFloat 8s linear infinite;
+}
+
+/* ---- Staggered Scale Cascade ---- */
+@keyframes scaleCascade {
+  0% { opacity: 0; transform: scale(0.8) translateY(20px); }
+  60% { transform: scale(1.02) translateY(-2px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-scale-cascade {
+  animation: scaleCascade 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ---- Slide Blur In ---- */
+@keyframes slideBlurIn {
+  0% { opacity: 0; transform: translateY(40px); filter: blur(10px); }
+  100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.animate-slide-blur {
+  animation: slideBlurIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ---- Elastic Bounce In ---- */
+@keyframes elasticBounce {
+  0% { opacity: 0; transform: scale(0.3) translateY(60px); }
+  50% { transform: scale(1.05) translateY(-5px); }
+  70% { transform: scale(0.95) translateY(2px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-elastic {
+  animation: elasticBounce 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ---- Ripple Wave ---- */
+@keyframes rippleWave {
+  0% { box-shadow: 0 0 0 0 rgba(0, 107, 92, 0.4); }
+  100% { box-shadow: 0 0 0 20px rgba(0, 107, 92, 0); }
+}
+.animate-ripple-wave {
+  animation: rippleWave 2s ease-out infinite;
+}
+
+/* ---- Shimmer Text ---- */
+@keyframes shimmerText {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.animate-shimmer-text {
+  background: linear-gradient(90deg, #000666 0%, #006b5c 30%, #44ddc1 50%, #006b5c 70%, #000666 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmerText 3s linear infinite;
+}
+
+/* ---- Counter Number Pop ---- */
+@keyframes numberPop {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.3); color: #006b5c; }
+  60% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+.animate-number-pop {
+  animation: numberPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ---- Spin Reveal ---- */
+@keyframes spinReveal {
+  0% { opacity: 0; transform: rotate(-180deg) scale(0); }
+  100% { opacity: 1; transform: rotate(0deg) scale(1); }
+}
+.animate-spin-reveal {
+  animation: spinReveal 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ---- Slide In With Stagger ---- */
+@keyframes slideStagger {
+  0% { opacity: 0; transform: translateX(-30px) skewX(-5deg); }
+  100% { opacity: 1; transform: translateX(0) skewX(0deg); }
+}
+.animate-slide-stagger {
+  animation: slideStagger 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ---- Breathing Glow (enhanced) ---- */
+@keyframes breathGlow {
+  0%, 100% { opacity: 0.6; filter: brightness(1) blur(0px); }
+  50% { opacity: 1; filter: brightness(1.2) blur(1px); }
+}
+.animate-breath-glow {
+  animation: breathGlow 4s ease-in-out infinite;
+}
+
+/* ---- Magnetic Hover (for cards) ---- */
+.card-magnetic {
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
+}
+.card-magnetic:hover {
+  transform: perspective(1000px) rotateX(2deg) rotateY(2deg) translateY(-8px) scale(1.02);
+  box-shadow: 0 30px 60px -15px rgba(0, 6, 102, 0.2);
+}
+
+/* ---- Gradient Border Animation ---- */
+@keyframes gradientBorder {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.gradient-border {
+  position: relative;
+}
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, #000666, #006b5c, #44ddc1, #000666);
+  background-size: 300% 300%;
+  animation: gradientBorder 4s ease infinite;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.gradient-border:hover::before {
+  opacity: 1;
+}
+
+/* ---- Confetti Burst (for success states) ---- */
+@keyframes confettiBurst {
+  0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+  100% { transform: translateY(-200px) rotate(720deg) scale(0); opacity: 0; }
+}
+.animate-confetti {
+  animation: confettiBurst 1.5s ease-out forwards;
+}
+
+/* ---- Typewriter Effect ---- */
+@keyframes typewriter {
+  from { width: 0; }
+  to { width: 100%; }
+}
+@keyframes blinkCaret {
+  50% { border-color: transparent; }
+}
+.animate-typewriter {
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 2px solid #006b5c;
+  animation: typewriter 2s steps(30) forwards, blinkCaret 0.75s step-end infinite;
+}
+
+/* ---- Orbital Rotation ---- */
+@keyframes orbit {
+  0% { transform: rotate(0deg) translateX(20px) rotate(0deg); }
+  100% { transform: rotate(360deg) translateX(20px) rotate(-360deg); }
+}
+.animate-orbit {
+  animation: orbit 4s linear infinite;
+}
+
+/* ---- Wave Reveal ---- */
+@keyframes waveReveal {
+  0% { clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0 100%); }
+  100% { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+}
+.animate-wave-reveal {
+  animation: waveReveal 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ---- Stagger delays ---- */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+.delay-600 { animation-delay: 600ms; }
+.delay-700 { animation-delay: 700ms; }
+.delay-800 { animation-delay: 800ms; }
+.delay-1000 { animation-delay: 1000ms; }
+
+/* ---- Progress bar animated gradient ---- */
+.progress-gradient {
+  background: linear-gradient(90deg, #006b5c, #44ddc1, #006b5c);
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+/* ---- Notification bell shake ---- */
+@keyframes shake {
+  0%, 100% { transform: rotate(0deg); }
+  10%, 30%, 50%, 70%, 90% { transform: rotate(-8deg); }
+  20%, 40%, 60%, 80% { transform: rotate(8deg); }
+}
+.animate-shake {
+  animation: shake 0.6s ease-in-out;
+}
+
+/* ---- Skeleton loader ---- */
+.skeleton {
+  background: linear-gradient(90deg, #f2f4f7 25%, #e6e8eb 50%, #f2f4f7 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 0.5rem;
+}
+
+/* ---- Shimmer base ---- */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ============================================
+   WEB3 SIDEBAR ANIMATIONS
+   ============================================ */
+
+/* Glow pulse for active nav */
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* Shimmer sweep for buttons */
+@keyframes shimmerSweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Gradient border animation */
+@keyframes borderGlow {
+  0%, 100% { border-color: rgba(0, 107, 92, 0.3); }
+  50% { border-color: rgba(0, 6, 102, 0.5); }
+}
+
+/* ============================================
+   MOBILE RESPONSIVENESS
+   ============================================ */
+@media (max-width: 1023px) {
+  .sidebar-desktop {
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .sidebar-desktop.open {
+    transform: translateX(0);
+  }
+  .ml-sidebar-width { margin-left: 0 !important; }
+  .left-sidebar-width { left: 0 !important; }
+  .w-\[calc\(100\%-280px\)\] { width: 100% !important; }
+  .mobile-bottom-nav { display: flex !important; }
+}
+
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 40;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.sidebar-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
