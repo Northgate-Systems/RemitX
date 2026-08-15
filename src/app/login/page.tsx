@@ -96,7 +96,7 @@ export default function LoginPage() {
                   onChange={(e) => setFirstName(e.target.value)}
                   required
                   className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
-                  placeholder="Kelvin"
+                  placeholder="Peter"
                 />
               </div>
               <div>
@@ -109,7 +109,7 @@ export default function LoginPage() {
                   onChange={(e) => setLastName(e.target.value)}
                   required
                   className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
-                  placeholder="Bidi"
+                  placeholder="Okoye"
                 />
               </div>
             </div>
