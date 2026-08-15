@@ -16,6 +16,10 @@ import type { Database } from "./types";
  * crashes when NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are not
  * set yet. The error only surfaces if an API route actually tries to touch
  * the database without the env vars configured.
+ *
+ * The URL may be provided as NEXT_PUBLIC_SUPABASE_URL (standard Supabase
+ * naming, set in Vercel / Netlify) or SUPABASE_URL (used by this repo's
+ * local .env). Both are handled here so the app runs locally and on a host.
  */
 
 const globalForSupabase = globalThis as unknown as {
@@ -23,12 +27,15 @@ const globalForSupabase = globalThis as unknown as {
 };
 
 function getSupabaseClient(): SupabaseClient<Database> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  // Accept either naming convention — NEXT_PUBLIC_SUPABASE_URL (hosting
+  // convention) or SUPABASE_URL (this repo's local .env convention).
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !serviceRoleKey) {
     throw new Error(
-      "[supabase] NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must both be set before calling the database. Add them to .env (local) or the Vercel project settings."
+      "[supabase] NEXT_PUBLIC_SUPABASE_URL (or SUPABASE_URL) and SUPABASE_SERVICE_ROLE_KEY must both be set before calling the database. Add them to .env (local) or your host's project settings."
     );
   }
 
