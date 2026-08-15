@@ -1,9 +1,10 @@
 import { NextRequest } from "next/server";
 import { Keypair, TransactionBuilder } from "@stellar/stellar-sdk";
-import { db } from "@/lib/db";
+import { supabase } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth";
 import { submitTransaction, NETWORK_PASSPHRASE } from "@/lib/stellar";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
+import type { Transaction } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
 // Testnet-only convenience endpoint: signs server-side with a secret key
@@ -33,11 +34,17 @@ export async function POST(request: NextRequest) {
       return errorResponse("transactionId, xdr, and secretKey are all required", 400);
     }
 
-    const tx = await db.transaction.findUnique({ where: { id: transactionId } });
-    if (!tx) return errorResponse("Transaction not found", 404);
-    if (tx.userId !== user.id) return unauthorizedResponse();
-    if (tx.status !== "pending") {
-      return errorResponse(`Transaction is already in status: ${tx.status}`, 400);
+    const { data: tx, error: txError } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("id", transactionId)
+      .maybeSingle();
+
+    if (txError || !tx) return errorResponse("Transaction not found", 404);
+    const existing = tx as Transaction;
+    if (existing.userId !== user.id) return unauthorizedResponse();
+    if (existing.status !== "pending") {
+      return errorResponse(`Transaction is already in status: ${existing.status}`, 400);
     }
 
     let keypair: Keypair;
@@ -53,23 +60,34 @@ export async function POST(request: NextRequest) {
     const transaction = TransactionBuilder.fromXDR(xdr, NETWORK_PASSPHRASE);
     transaction.sign(keypair);
 
-    await db.transaction.update({ where: { id: transactionId }, data: { status: "validating" } });
+    await supabase
+      .from("transactions")
+      .update({ status: "validating" })
+      .eq("id", transactionId);
 
     const result = await submitTransaction(transaction.toXDR());
 
-    const updated = await db.transaction.update({
-      where: { id: transactionId },
-      data: {
+    const { data: updated, error: updateError } = await supabase
+      .from("transactions")
+      .update({
         status: result.status === "confirmed" ? "confirmed" : "failed",
         stellarTxHash: result.hash || null,
-        confirmedAt: result.status === "confirmed" ? new Date() : null,
-      },
-    });
+        confirmedAt: result.status === "confirmed" ? new Date().toISOString() : null,
+      })
+      .eq("id", transactionId)
+      .select("*")
+      .single();
 
+    if (updateError || !updated) {
+      console.error("Sign-and-submit update error:", updateError);
+      return errorResponse("Failed to update transaction status", 500);
+    }
+
+    const finalTx = updated as Transaction;
     return successResponse({
-      transactionId: updated.id,
-      status: updated.status,
-      stellarTxHash: updated.stellarTxHash,
+      transactionId: finalTx.id,
+      status: finalTx.status,
+      stellarTxHash: finalTx.stellarTxHash,
       resultCode: result.resultCode,
     });
   } catch (err: unknown) {

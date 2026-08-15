@@ -1,8 +1,8 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
-import { db } from "./db";
-import type { User } from "@/generated/prisma/client";
+import { supabase } from "./supabase";
+import type { User } from "./types";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-jwt-secret-change-in-production-min-32-chars-long";
 const SESSION_COOKIE = "remitx_session";
@@ -71,12 +71,14 @@ export async function getCurrentUser(): Promise<SafeUser | null> {
   const payload = verifyToken(token);
   if (!payload) return null;
 
-  const user = await db.user.findUnique({
-    where: { id: payload.sub },
-  });
-  if (!user) return null;
+  const { data: user, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", payload.sub)
+    .single();
+  if (error || !user) return null;
 
-  const { passwordHash: _, ...safeUser } = user;
+  const { passwordHash: _, ...safeUser } = user as User;
   return safeUser;
 }
 

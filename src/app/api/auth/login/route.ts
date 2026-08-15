@@ -1,9 +1,10 @@
 import { NextRequest } from "next/server";
-import { db } from "@/lib/db";
+import { supabase } from "@/lib/supabase";
 import { verifyPassword, signToken, setSessionCookie, toSafeUser } from "@/lib/auth";
 import { loginSchema } from "@/lib/validations";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 import { successResponse, errorResponse } from "@/lib/api-response";
+import type { User } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,17 +22,22 @@ export async function POST(request: NextRequest) {
       return errorResponse(`Verification failed: ${turnstile.reason}`, 400);
     }
 
-    const user = await db.user.findUnique({ where: { email } });
-    if (!user) {
+    const { data: user, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (error || !user) {
       return errorResponse("Invalid email or password", 401);
     }
 
-    const valid = await verifyPassword(password, user.passwordHash);
+    const valid = await verifyPassword(password, (user as User).passwordHash);
     if (!valid) {
       return errorResponse("Invalid email or password", 401);
     }
 
-    const safeUser = toSafeUser(user);
+    const safeUser = toSafeUser(user as User);
     const token = signToken(safeUser);
     await setSessionCookie(token);
 

@@ -22,9 +22,6 @@ build/
 .env.production
 .env.production.local
 
-# Prisma
-prisma/*.db
-prisma/*.db-journal
 
 # IDE
 .vscode/

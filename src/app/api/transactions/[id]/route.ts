@@ -1,6 +1,7 @@
-import { db } from "@/lib/db";
+import { supabase } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
+import type { Transaction } from "@/lib/types";
 
 export async function GET(
   _request: Request,
@@ -11,11 +12,20 @@ export async function GET(
 
   const { id } = await params;
 
-  const tx = await db.transaction.findUnique({ where: { id } });
-  if (!tx) return errorResponse("Transaction not found", 404);
-  if (tx.userId !== user.id) return unauthorizedResponse();
+  const { data: tx, error: txError } = await supabase
+    .from("transactions")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
 
-  const escrow = await db.escrow.findUnique({ where: { transactionId: tx.id } });
+  if (txError || !tx) return errorResponse("Transaction not found", 404);
+  if ((tx as Transaction).userId !== user.id) return unauthorizedResponse();
 
-  return successResponse({ transaction: tx, escrow });
+  const { data: escrow } = await supabase
+    .from("escrows")
+    .select("*")
+    .eq("transactionId", (tx as Transaction).id)
+    .maybeSingle();
+
+  return successResponse({ transaction: tx, escrow: escrow || null });
 }

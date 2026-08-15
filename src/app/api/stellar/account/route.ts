@@ -1,4 +1,4 @@
-import { db } from "@/lib/db";
+import { supabase } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth";
 import { createTestnetAccount } from "@/lib/stellar";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
@@ -16,10 +16,15 @@ export async function POST() {
 
     const account = await createTestnetAccount();
 
-    await db.user.update({
-      where: { id: user.id },
-      data: { stellarPublicKey: account.publicKey },
-    });
+    const { error } = await supabase
+      .from("users")
+      .update({ stellarPublicKey: account.publicKey })
+      .eq("id", user.id);
+
+    if (error) {
+      console.error("Account update error:", error);
+      return errorResponse("Failed to save Stellar account", 500);
+    }
 
     // The secret key is returned exactly once, here, and never stored
     // server-side. If the user loses it, this testnet account is gone -

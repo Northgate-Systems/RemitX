@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { db } from "@/lib/db";
+import { supabase } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth";
 import { buildSendTransaction, fetchRate } from "@/lib/stellar";
 import { stellarSendSchema } from "@/lib/validations";
@@ -42,8 +42,9 @@ export async function POST(request: NextRequest) {
       recipientAddress,
     });
 
-    const transaction = await db.transaction.create({
-      data: {
+    const { data: transaction, error } = await supabase
+      .from("transactions")
+      .insert({
         userId: user.id,
         fromAsset: fromAsset.toUpperCase(),
         toAsset: toAsset.toUpperCase(),
@@ -51,8 +52,14 @@ export async function POST(request: NextRequest) {
         toAmount,
         recipientAddress,
         status: "pending",
-      },
-    });
+      })
+      .select("id")
+      .single();
+
+    if (error || !transaction) {
+      console.error("Transaction insert error:", error);
+      return errorResponse("Failed to record transaction", 500);
+    }
 
     return successResponse({
       transactionId: transaction.id,

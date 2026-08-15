@@ -1,9 +1,10 @@
 import { NextRequest } from "next/server";
-import { db } from "@/lib/db";
+import { supabase } from "@/lib/supabase";
 import { hashPassword, signToken, setSessionCookie, toSafeUser } from "@/lib/auth";
 import { registerSchema } from "@/lib/validations";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 import { successResponse, errorResponse } from "@/lib/api-response";
+import type { User } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,7 +23,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already exists
-    const existing = await db.user.findUnique({ where: { email } });
+    const { data: existing } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
     if (existing) {
       return errorResponse("Email already registered", 409);
     }
@@ -42,18 +47,25 @@ export async function POST(request: NextRequest) {
       console.warn("Stellar account creation failed, continuing without one:", err);
     }
 
-    const user = await db.user.create({
-      data: {
+    const { data: user, error } = await supabase
+      .from("users")
+      .insert({
         firstName,
         lastName,
         email,
         passwordHash,
         stellarPublicKey,
         // kycStatus defaults to "pending"
-      },
-    });
+      })
+      .select("*")
+      .single();
 
-    const safeUser = toSafeUser(user);
+    if (error || !user) {
+      console.error("Registration insert error:", error);
+      return errorResponse("Internal server error", 500);
+    }
+
+    const safeUser = toSafeUser(user as User);
     const token = signToken(safeUser);
     await setSessionCookie(token);
 

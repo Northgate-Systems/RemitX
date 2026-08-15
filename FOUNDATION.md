@@ -5,10 +5,10 @@ This document summarizes what was built during the foundation phase, what's left
 ## ✅ Fully Working
 
 ### Phase 2 - Data Layer
-- **Prisma schema** with 4 models: `User`, `Transaction`, `Rate`, `Escrow`
-- Models include proper enums, relations, indexes, and CockroachDB-compatible defaults
-- Prisma Client generated to `src/generated/prisma/`
-- Singleton `db` client in `src/lib/db.ts` with `@prisma/adapter-pg`
+- **Supabase schema** (`supabase-schema.sql`) with 4 tables: `users`, `transactions`, `rates`, `escrows`
+- Tables include proper enum types, indexes, foreign keys, and `updatedAt` triggers
+- Hand-written row types in `src/lib/types.ts` (no ORM/codegen)
+- Singleton `supabase` client in `src/lib/supabase.ts` using `@supabase/supabase-js` with the service role key
 
 ### Phase 3 - Auth
 - **API routes:** `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`
@@ -78,7 +78,7 @@ Each has a `// TODO(contributor)` comment describing exactly what needs to be wi
 |-------|-----------|--------|
 | **Frontend** | Next.js 16, TypeScript, Tailwind v4 | UI complete, no API wiring |
 | **Auth** | bcrypt + JWT (httpOnly cookies) | Fully working |
-| **Database** | CockroachDB via Prisma | Schema + client ready |
+| **Database** | Supabase Postgres via `@supabase/supabase-js` | Schema + client ready |
 | **Stellar SDK** | `@stellar/stellar-sdk` | Imported + typed, routes stubbed |
 | **Soroban** | Rust + `soroban-sdk` | Contract scaffolded, `deposit/release/refund` stubbed |
 | **Validation** | Zod | Every API route validated |

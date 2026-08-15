@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { db } from "@/lib/db";
+import { supabase } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth";
 import { successResponse, unauthorizedResponse } from "@/lib/api-response";
 
@@ -14,21 +14,21 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 100);
     const offset = parseInt(searchParams.get("offset") || "0");
 
-    const [transactions, total] = await Promise.all([
-      db.transaction.findMany({
-        where: { userId: user.id },
-        orderBy: { createdAt: "desc" },
-        take: limit,
-        skip: offset,
-      }),
-      db.transaction.count({
-        where: { userId: user.id },
-      }),
-    ]);
+    const { data: transactions, error, count } = await supabase
+      .from("transactions")
+      .select("*", { count: "exact" })
+      .eq("userId", user.id)
+      .order("createdAt", { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) {
+      console.error("Transactions fetch error:", error);
+      return unauthorizedResponse();
+    }
 
     return successResponse({
-      transactions,
-      total,
+      transactions: transactions || [],
+      total: count ?? 0,
       limit,
       offset,
     });

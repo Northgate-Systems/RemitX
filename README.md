@@ -4,7 +4,7 @@
 [![Stellar](https://img.shields.io/badge/Stellar-Network-7B00FF?logo=stellar)](https://stellar.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)](https://typescriptlang.org)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss)](https://tailwindcss.com)
-[![Prisma](https://img.shields.io/badge/Prisma-7-2D3748?logo=prisma)](https://prisma.io)
+[![Supabase](https://img.shields.io/badge/Supabase-Postgres-3ECF8E?logo=supabase)](https://supabase.com)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Built on Stellar](https://img.shields.io/badge/Built_on-Stellar-7B00FF?logo=stellar)](https://stellar.org)
 [![Contributions Welcome](https://img.shields.io/badge/Contributions-Welcome-brightgreen.svg)](CONTRIBUTING.md)
@@ -99,7 +99,8 @@ RemitX creates a three-pillar ecosystem:
 ┌───────┴───────┐     ┌───────┴───────┐     ┌───────┴───────┐
 │   Supabase    │     │   Stellar     │     │   Rate        │
 │   Postgres    │     │   Horizon     │     │   Engine      │
-│   (Prisma)    │     │   API         │     │   (Free)      │
+│  (@supabase/  │     │   API         │     │   (Free)      │
+│  supabase-js) │     │               │     │               │
 │               │     │               │     │               │
 │  Users        │     │  Path         │     │  CoinGecko    │
 │  Transactions │     │  Payments     │     │  ExchangeRate │
@@ -230,7 +231,7 @@ RemitX implements defense-in-depth security practices:
 | **Frontend** | Next.js 16, React 19, TypeScript, Tailwind CSS 4 |
 | **Animations** | Framer Motion |
 | **Icons** | Lucide React |
-| **Database** | Supabase Postgres via Prisma 7 |
+| **Database** | Supabase Postgres via `@supabase/supabase-js` |
 | **Validation** | Zod |
 | **Authentication** | bcrypt + JWT (httpOnly cookies) |
 | **Bot Protection** | Cloudflare Turnstile |
@@ -243,7 +244,7 @@ RemitX implements defense-in-depth security practices:
 
 ### V1 - Foundation (Current Phase)
 
-- ✅ Prisma schema with 4 models (User, Transaction, Rate, Escrow)
+- ✅ Supabase schema with 4 tables (users, transactions, rates, escrows) — see `supabase-schema.sql`
 - ✅ Full authentication flow (register, login, logout, session)
 - ✅ Middleware route protection
 - ✅ Live rate engine (CoinGecko + ExchangeRate-API)
@@ -304,27 +305,18 @@ Open `.env` and follow the **6 numbered steps** embedded in the file:
 |---|---|---|
 | **1** | `STELLAR_NETWORK`, `STELLAR_HORIZON_URL` | Leave as-is for testnet development |
 | **2** | `STELLAR_USDC_ISSUER`, `STELLAR_EURC_ISSUER` | Add issuer public keys for non-XLM assets (optional for dev) |
-| **3** | `DATABASE_URL` | Get your `postgresql://` connection string from Supabase |
+| **3** | `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Get both from Supabase Project Settings → API |
 | **4** | `JWT_SECRET` | Generate with `openssl rand -base64 32` |
 | **5** | `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Get from Cloudflare Turnstile dashboard (optional for dev) |
 | **6** | `NEXT_PUBLIC_APP_URL` | Set to `http://localhost:3000` for local dev |
 
 ### Database Setup
 
-Once `DATABASE_URL` is configured in `.env`:
-
-```bash
-# For a fresh development database (creates tables from schema)
-npx prisma db push
-
-# OR for an existing database with migrations
-npx prisma migrate deploy
-
-# Generate the Prisma client (runs automatically on npm install)
-npx prisma generate
-```
-
-> **⚠️ Important:** In your Supabase project, enable **"Enforce Foreign Keys"** under *Project Settings → Database*. Supabase has this off by default on some plans, and the Prisma schema relies on it.
+Open the Supabase dashboard for your project → **SQL Editor** → paste the
+entire contents of `supabase-schema.sql` (in the project root) → **Run**.
+That creates all 4 tables, the enum types, indexes, and the `updatedAt`
+triggers in one shot. Re-run it any time it changes — every statement uses
+`IF NOT EXISTS` / `CREATE OR REPLACE` so it's safe to run more than once.
 
 ### Running the Application
 
@@ -335,7 +327,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser. The app will automatically:
 - Connect to the Stellar testnet (funded via Friendbot)
-- Use your Supabase Postgres database
+- Query your Supabase Postgres database via the Supabase JS client
 - Skip Turnstile verification if keys aren't set (dev mode)
 
 ### Available Scripts
@@ -346,9 +338,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser. The app wil
 | `npm run build` | Build the application for production |
 | `npm run start` | Start the production server |
 | `npm run lint` | Run ESLint across the codebase |
-| `npx prisma studio` | Open Prisma Studio to inspect the database |
-| `npx prisma db push` | Sync the Prisma schema to the database |
-| `npx prisma migrate deploy` | Apply database migrations |
+| Supabase Table Editor | Inspect/edit rows directly in the Supabase dashboard |
 
 ---
 
@@ -438,6 +428,7 @@ Check the [`FOUNDATION.md`](FOUNDATION.md) file - it contains a complete list of
 
 - [FOUNDATION.md](FOUNDATION.md) - Foundation build summary and contributor TODOs
 - [contracts/escrow/README.md](contracts/escrow/README.md) - Soroban escrow contract documentation
+- [CLOUDFLARE_TURNSTILE_SETUP.md](CLOUDFLARE_TURNSTILE_SETUP.md) - Step-by-step Cloudflare Turnstile setup guide
 - [.env.example](.env.example) - Environment variable template with setup instructions
 - [LICENSE](LICENSE) - MIT License
 
