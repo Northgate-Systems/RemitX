@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 
 /**
@@ -10,25 +10,49 @@ import type { Database } from "./types";
  * database, the same way the old Prisma setup did. This client must never
  * be imported into a "use client" component — the service role key would
  * end up shipped to the browser.
+ *
+ * The client is created lazily through a Proxy so that merely importing this
+ * module (which happens at build time for every route that uses it) never
+ * crashes when NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are not
+ * set yet. The error only surfaces if an API route actually tries to touch
+ * the database without the env vars configured.
  */
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!supabaseUrl || !serviceRoleKey) {
-  console.warn(
-    "[supabase] NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is not set — database calls will fail until both are set in .env."
-  );
-}
-
 const globalForSupabase = globalThis as unknown as {
-  supabase: ReturnType<typeof createClient<Database>> | undefined;
+  supabase: SupabaseClient<Database> | undefined;
 };
 
-export const supabase =
-  globalForSupabase.supabase ??
-  createClient<Database>(supabaseUrl || "", serviceRoleKey || "", {
-    auth: { persistSession: false },
-  });
+function getSupabaseClient(): SupabaseClient<Database> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (process.env.NODE_ENV !== "production") globalForSupabase.supabase = supabase;
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error(
+      "[supabase] NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must both be set before calling the database. Add them to .env (local) or the Vercel project settings."
+    );
+  }
+
+  if (!globalForSupabase.supabase) {
+    globalForSupabase.supabase = createClient<Database>(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false },
+    });
+  }
+
+  return globalForSupabase.supabase;
+}
+
+export const supabase = new Proxy(
+  {},
+  {
+    get(_target, prop) {
+      if (prop === "then") {
+        // Avoid the proxy being treated as a thenable by awaiting code.
+        return undefined;
+      }
+      const client = getSupabaseClient();
+      const value = (client as unknown as Record<PropertyKey, unknown>)[prop];
+      // Bind methods to the real client so `this` is correct when called.
+      return typeof value === "function" ? (value as Function).bind(client) : value;
+    },
+  }
+) as SupabaseClient<Database>;
