@@ -87,6 +87,10 @@ export async function POST(request: NextRequest) {
     return successResponse({ user: safeUser });
   } catch (err) {
     console.error("Login error:", err);
+    const message = err instanceof Error ? err.message : "";
+    if (message.includes("SUPABASE_SERVICE_ROLE_KEY") || message.includes("NEXT_PUBLIC_SUPABASE_URL")) {
+      return errorResponse("Database not configured. Add SUPABASE_SERVICE_ROLE_KEY and NEXT_PUBLIC_SUPABASE_URL to your .env file.", 500);
+    }
     return errorResponse("Internal server error", 500);
   }
 }
