@@ -16,6 +16,9 @@ export type User = {
   passwordHash: string;
   stellarPublicKey: string | null;
   kycStatus: KycStatus;
+  sessionVersion: number;
+  failedLoginAttempts: number;
+  lockedUntil: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -79,7 +82,19 @@ export type Database = {
     Tables: {
       users: Tables<
         User,
-        Partial<Pick<User, "id" | "kycStatus" | "stellarPublicKey" | "createdAt" | "updatedAt">> &
+        Partial<
+          Pick<
+            User,
+            | "id"
+            | "kycStatus"
+            | "stellarPublicKey"
+            | "sessionVersion"
+            | "failedLoginAttempts"
+            | "lockedUntil"
+            | "createdAt"
+            | "updatedAt"
+          >
+        > &
           Pick<User, "email" | "firstName" | "lastName" | "passwordHash">
       >;
       transactions: Tables<

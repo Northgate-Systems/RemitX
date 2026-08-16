@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 import { supabase } from "./supabase";
 import type { User } from "./types";
+import { logSecurityEvent } from "./security";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-jwt-secret-change-in-production-min-32-chars-long";
 const SESSION_COOKIE = "remitx_session";
@@ -20,31 +21,32 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash);
 }
 
-/** Generate a JWT for a user */
-export function signToken(user: SafeUser): string {
+/** Generate a JWT for a user with session version for invalidation on password change */
+export function signToken(user: SafeUser, sessionVersion = 1): string {
   return jwt.sign(
-    { sub: user.id, email: user.email },
+    { sub: user.id, email: user.email, sv: sessionVersion },
     JWT_SECRET,
     { expiresIn: "7d" }
   );
 }
 
 /** Verify and decode a JWT */
-export function verifyToken(token: string): { sub: string; email: string } | null {
+export function verifyToken(token: string): { sub: string; email: string; sv: number } | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as { sub: string; email: string };
+    const decoded = jwt.verify(token, JWT_SECRET) as { sub: string; email: string; sv?: number };
+    return { sub: decoded.sub, email: decoded.email, sv: decoded.sv || 1 };
   } catch {
     return null;
   }
 }
 
-/** Set the session cookie */
+/** Set the session cookie with secure flags */
 export async function setSessionCookie(token: string): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "strict",
     path: "/",
     maxAge: 60 * 60 * 24 * 7, // 7 days
   });
@@ -56,7 +58,7 @@ export async function clearSessionCookie(): Promise<void> {
   cookieStore.set(SESSION_COOKIE, "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "strict",
     path: "/",
     maxAge: 0,
   });
@@ -78,7 +80,15 @@ export async function getCurrentUser(): Promise<SafeUser | null> {
     .single();
   if (error || !user) return null;
 
-  const { passwordHash: _, ...safeUser } = user as User;
+  // Check session version - if password was changed, invalidate old sessions
+  const userRow = user as User;
+  const currentSessionVersion = userRow.sessionVersion || 1;
+  if (payload.sv !== currentSessionVersion) {
+    logSecurityEvent("invalid_token", { userId: payload.sub, reason: "session_version_mismatch" });
+    return null;
+  }
+
+  const { passwordHash: _, ...safeUser } = userRow;
   return safeUser;
 }
 

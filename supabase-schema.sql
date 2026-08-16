@@ -41,9 +41,12 @@ CREATE TABLE IF NOT EXISTS "users" (
   "firstName"        TEXT NOT NULL,
   "lastName"         TEXT NOT NULL,
   "passwordHash"     TEXT NOT NULL,
-  "stellarPublicKey" TEXT UNIQUE,
-  "kycStatus"        "KycStatus" NOT NULL DEFAULT 'pending',
-  "createdAt"        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "stellarPublicKey"    TEXT UNIQUE,
+  "kycStatus"           "KycStatus" NOT NULL DEFAULT 'pending',
+  "sessionVersion"      INTEGER NOT NULL DEFAULT 1,
+  "failedLoginAttempts" INTEGER NOT NULL DEFAULT 0,
+  "lockedUntil"         TIMESTAMPTZ,
+  "createdAt"           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   "updatedAt"        TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -125,3 +128,41 @@ CREATE TRIGGER escrows_set_updated_at
 -- Supabase directly. If you ever add client-side Supabase calls (using the
 -- anon key), enable RLS and add real policies before doing that — an
 -- open table with the anon key and no policies is publicly readable.
+
+-- ── Security hardening: RLS enabled with restrictive policies ────────────
+ALTER TABLE "users" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "transactions" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "escrows" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "rates" ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "users_select_own" ON "users";
+CREATE POLICY "users_select_own" ON "users"
+  FOR SELECT USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "users_update_own" ON "users";
+CREATE POLICY "users_update_own" ON "users"
+  FOR UPDATE USING (auth.uid() = id)
+  WITH CHECK (auth.uid() = id);
+
+DROP POLICY IF EXISTS "transactions_select_own" ON "transactions";
+CREATE POLICY "transactions_select_own" ON "transactions"
+  FOR SELECT USING (auth.uid() = "userId");
+
+DROP POLICY IF EXISTS "escrows_select_own" ON "escrows";
+CREATE POLICY "escrows_select_own" ON "escrows"
+  FOR SELECT USING (auth.uid() = "userId");
+
+DROP POLICY IF EXISTS "rates_select_public" ON "rates";
+CREATE POLICY "rates_select_public" ON "rates"
+  FOR SELECT USING (true);
+
+-- ── Database permission restrictions ─────────────────────────────────────
+REVOKE ALL ON "users" FROM anon;
+REVOKE ALL ON "transactions" FROM anon;
+REVOKE ALL ON "escrows" FROM anon;
+REVOKE ALL ON "rates" FROM anon;
+
+GRANT SELECT ON "users" TO authenticated;
+GRANT SELECT ON "transactions" TO authenticated;
+GRANT SELECT ON "escrows" TO authenticated;
+GRANT SELECT ON "rates" TO authenticated;

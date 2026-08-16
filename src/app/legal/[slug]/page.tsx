@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Landmark } from "lucide-react";
@@ -20,6 +21,32 @@ const PAGES: Record<string, { title: string; body: string }> = {
     body: "Found a security issue? Please report it via the Support page rather than a public GitHub issue. RemitX is pre-audit and testnet-only - do not use real Stellar secret keys with this product.",
   },
 };
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const page = PAGES[slug];
+  if (!page) return { title: "Legal" };
+  return {
+    title: page.title,
+    description: `${page.title} for RemitX - Stellar Network cross-border payments platform.`,
+    openGraph: {
+      title: `${page.title} | RemitX`,
+      description: `${page.title} for RemitX - Stellar Network cross-border payments platform.`,
+      url: `https://remitx.app/legal/${slug}`,
+      images: [
+        {
+          url: "/image/Remitx.png",
+          width: 1200,
+          height: 630,
+          alt: `RemitX - ${page.title}`,
+        },
+      ],
+    },
+    alternates: {
+      canonical: `/legal/${slug}`,
+    },
+  };
+}
 
 export default async function LegalPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

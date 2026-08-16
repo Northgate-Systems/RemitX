@@ -1,4 +1,4 @@
-import { Mail, ShieldAlert, FileText, Github } from "lucide-react";
+import { Mail, ShieldAlert, FileText, Github, MapPin } from "lucide-react";
 
 export default function SupportPage() {
   return (
@@ -50,6 +50,18 @@ export default function SupportPage() {
               <p className="text-sm font-bold text-gray-800">How sending works</p>
               <p className="text-xs text-gray-500 mt-1">
                 Activate a wallet on the Dashboard, then Send builds a Stellar path payment, Review signs and submits it, and Activity tracks it to confirmation.
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white border border-gray-200 rounded-xl p-5 flex items-start gap-3 sm:col-span-2">
+            <MapPin size={20} className="text-primary shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-bold text-gray-800">Registered Office</p>
+              <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                RemitX Technologies Ltd.<br />
+                14B Admiralty Way, Lekki Phase 1,<br />
+                Lagos 105102, Nigeria
               </p>
             </div>
           </div>
