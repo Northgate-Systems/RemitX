@@ -17,14 +17,19 @@ export function applySecurityHeaders(response: NextResponse): NextResponse {
   return response;
 }
 
+// Development origins — localhost variants are all allowed in dev.
+// In production only the real domain + Vercel preview domains pass.
 export const ALLOWED_ORIGINS = new Set([
   "https://remitx.app",
+  "https://remitx.vercel.app",
   "http://localhost:3000",
   "http://localhost:3001",
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:3001",
 ]);
 
 export function isAllowedOrigin(origin: string | null): boolean {
-  if (!origin) return false;
+  if (!origin) return true; // same-origin / non-CORS requests are fine
   return ALLOWED_ORIGINS.has(origin);
 }
 

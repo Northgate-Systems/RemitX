@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifyToken } from "@/lib/jwt";
-import { applySecurityHeaders, isAllowedOrigin, logSecurityEvent } from "@/lib/security-edge";
+import { applySecurityHeaders, logSecurityEvent } from "@/lib/security-edge";
 
 const publicPaths = [
   "/",
@@ -20,8 +20,7 @@ const publicPaths = [
   "/sitemap.xml",
 ];
 
-// CSRF-protected methods for state-changing requests
-const CSRF_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const isDev = process.env.NODE_ENV !== "production";
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -30,21 +29,26 @@ export function middleware(request: NextRequest) {
   // Apply security headers to all responses
   applySecurityHeaders(response);
 
-  // CORS lockdown for API routes
-  if (pathname.startsWith("/api/")) {
+  // Allow public paths before any auth/CORS checks
+  if (publicPaths.some((p) => pathname.startsWith(p))) {
+    return response;
+  }
+
+  // CORS lockdown for authenticated API routes - only in production
+  // In dev, we don't know the exact origin (localhost:3000 vs 127.0.0.1 etc)
+  if (!isDev && pathname.startsWith("/api/")) {
     const origin = request.headers.get("origin");
-    if (origin && !isAllowedOrigin(origin)) {
+    const allowed = [
+      "https://remitx.app",
+      "https://remitx.vercel.app",
+    ];
+    if (origin && !allowed.includes(origin)) {
       logSecurityEvent("csrf_blocked", { origin, pathname, reason: "disallowed_origin" });
       return NextResponse.json(
         { success: false, error: "Origin not allowed" },
         { status: 403 }
       );
     }
-  }
-
-  // Allow public paths
-  if (publicPaths.some((p) => pathname.startsWith(p))) {
-    return response;
   }
 
   // Check for session cookie

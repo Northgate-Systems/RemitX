@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useId } from "react";
+import { useEffect, useRef, useId, useState } from "react";
 
 declare global {
   interface Window {
@@ -29,19 +29,13 @@ interface TurnstileWidgetProps {
   onExpire?: () => void;
 }
 
-/**
- * Renders the Cloudflare Turnstile challenge widget. If
- * NEXT_PUBLIC_TURNSTILE_SITE_KEY isn't set yet, renders a clear placeholder
- * instead of a broken widget, so the rest of the form is still usable
- * during local development before Turnstile is configured.
- */
 export default function TurnstileWidget({ onVerify, onExpire }: TurnstileWidgetProps) {
   const containerId = `turnstile-${useId().replace(/:/g, "")}`;
   const widgetIdRef = useRef<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!SITE_KEY) {
-      // Nothing configured yet - don't block local development on it.
       onVerify("dev-skip-no-site-key");
       return;
     }
@@ -50,12 +44,21 @@ export default function TurnstileWidget({ onVerify, onExpire }: TurnstileWidgetP
       if (!window.turnstile) return;
       const el = document.getElementById(containerId);
       if (!el || widgetIdRef.current) return;
-      widgetIdRef.current = window.turnstile.render(el, {
-        sitekey: SITE_KEY as string,
-        callback: onVerify,
-        "expired-callback": onExpire,
-        theme: "light",
-      });
+      try {
+        widgetIdRef.current = window.turnstile.render(el, {
+          sitekey: SITE_KEY as string,
+          callback: onVerify,
+          "expired-callback": onExpire,
+          "error-callback": () => {
+            setError("Verification challenge failed. Please check your connection and try again.");
+            onExpire?.();
+          },
+          theme: "light",
+        });
+        setError(null);
+      } catch (e) {
+        setError("Could not load the verification widget. Please refresh the page.");
+      }
     }
 
     if (window.turnstile) {
@@ -67,9 +70,12 @@ export default function TurnstileWidget({ onVerify, onExpire }: TurnstileWidgetP
     if (!script) {
       script = document.createElement("script");
       script.id = SCRIPT_ID;
-      script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad";
+      script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad&render=explicit";
       script.async = true;
       script.defer = true;
+      script.onerror = () => {
+        setError("Failed to load the verification script. Check your network connection.");
+      };
       document.head.appendChild(script);
     }
     window.onTurnstileLoad = render;
@@ -86,9 +92,17 @@ export default function TurnstileWidget({ onVerify, onExpire }: TurnstileWidgetP
   if (!SITE_KEY) {
     return (
       <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
-        Cloudflare Turnstile isn&apos;t configured yet - set{" "}
+        Cloudflare Turnstile is not configured yet - set{" "}
         <code className="font-mono">NEXT_PUBLIC_TURNSTILE_SITE_KEY</code> in .env to enable
         verification. Continuing without it for now.
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5">
+        {error}
       </div>
     );
   }
