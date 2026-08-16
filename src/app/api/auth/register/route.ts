@@ -75,10 +75,9 @@ export async function POST(request: NextRequest) {
         email: cleanEmail,
         passwordHash,
         stellarPublicKey,
-        sessionVersion: 1,
-        failedLoginAttempts: 0,
-        lockedUntil: null,
-        // kycStatus defaults to "pending"
+        // kycStatus, sessionVersion, failedLoginAttempts, lockedUntil
+        // all have DB defaults - don't insert them explicitly so the
+        // insert works even if the live table hasn't been migrated yet.
       })
       .select("*")
       .single();

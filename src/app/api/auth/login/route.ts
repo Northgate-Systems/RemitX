@@ -70,9 +70,10 @@ export async function POST(request: NextRequest) {
       return errorResponse("Invalid email or password", 401);
     }
 
-    // Check if account is locked in DB
+    // Check if account is locked in DB (column may not exist on old schema)
     const userRow = user as User;
-    if (userRow.lockedUntil && new Date(userRow.lockedUntil) > new Date()) {
+    const lockedUntil = (userRow as Record<string, unknown>).lockedUntil as string | null | undefined;
+    if (lockedUntil && new Date(lockedUntil) > new Date()) {
       return errorResponse("Account temporarily locked. Try again later.", 429);
     }
 
@@ -81,7 +82,8 @@ export async function POST(request: NextRequest) {
     logSecurityEvent("login_success", { userId: userRow.id });
 
     const safeUser = toSafeUser(userRow);
-    const token = signToken(safeUser, userRow.sessionVersion || 1);
+    const sessionVersion = (userRow as Record<string, unknown>).sessionVersion as number | undefined;
+    const token = signToken(safeUser, sessionVersion || 1);
     await setSessionCookie(token);
 
     return successResponse({ user: safeUser });

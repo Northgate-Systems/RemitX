@@ -81,9 +81,10 @@ export async function getCurrentUser(): Promise<SafeUser | null> {
   if (error || !user) return null;
 
   // Check session version - if password was changed, invalidate old sessions
+  // (column may not exist on old schema - default to 1)
   const userRow = user as User;
-  const currentSessionVersion = userRow.sessionVersion || 1;
-  if (payload.sv !== currentSessionVersion) {
+  const currentSessionVersion = (userRow as Record<string, unknown>).sessionVersion as number | undefined;
+  if (payload.sv !== (currentSessionVersion || 1)) {
     logSecurityEvent("invalid_token", { userId: payload.sub, reason: "session_version_mismatch" });
     return null;
   }
