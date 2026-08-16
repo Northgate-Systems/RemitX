@@ -2,8 +2,28 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Landmark } from "lucide-react";
+import { Landmark, Eye, EyeOff, Check, X } from "lucide-react";
 import TurnstileWidget from "@/components/TurnstileWidget";
+
+// ── Password strength checker ────────────────────────────────────────────
+function getPasswordStrength(password: string): {
+  score: number;
+  label: string;
+  color: string;
+  checks: { label: string; passed: boolean }[];
+} {
+  const checks = [
+    { label: "8+ characters", passed: password.length >= 8 },
+    { label: "Uppercase letter", passed: /[A-Z]/.test(password) },
+    { label: "Lowercase letter", passed: /[a-z]/.test(password) },
+    { label: "Number", passed: /\d/.test(password) },
+    { label: "Special character", passed: /[^A-Za-z0-9]/.test(password) },
+  ];
+  const score = checks.filter((c) => c.passed).length;
+  const labels = ["Very weak", "Weak", "Fair", "Good", "Strong"];
+  const colors = ["bg-red-500", "bg-orange-500", "bg-yellow-500", "bg-lime-500", "bg-emerald-500"];
+  return { score, label: labels[score], color: colors[score], checks };
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,13 +33,23 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const strength = getPasswordStrength(password);
+  const passwordsMatch = password === confirmPassword;
+  const confirmTouched = confirmPassword.length > 0;
+
   function resetForm() {
     setError("");
     setTurnstileToken("");
+    setPassword("");
+    setConfirmPassword("");
+    setShowPassword(false);
+    setShowConfirmPassword(false);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -28,6 +58,10 @@ export default function LoginPage() {
 
     if (isRegister && password !== confirmPassword) {
       setError("Passwords do not match");
+      return;
+    }
+    if (isRegister && strength.score < 3) {
+      setError("Password is too weak. Please use a stronger password.");
       return;
     }
     if (!turnstileToken) {
@@ -133,15 +167,45 @@ export default function LoginPage() {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Password
             </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={isRegister ? 8 : 1}
-              className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
-              placeholder={isRegister ? "At least 8 characters" : "Your password"}
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={isRegister ? 8 : 1}
+                className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm pr-12"
+                placeholder={isRegister ? "At least 8 characters" : "Your password"}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            {isRegister && password.length > 0 && (
+              <div className="mt-2 space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 flex gap-1">
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <div key={i} className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${i < strength.score ? strength.color : "bg-gray-200"}`} />
+                    ))}
+                  </div>
+                  <span className="text-[10px] font-bold text-gray-500 uppercase">{strength.label}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-1">
+                  {strength.checks.map((check) => (
+                    <div key={check.label} className="flex items-center gap-1 text-[10px]">
+                      {check.passed ? <Check size={12} className="text-emerald-500 shrink-0" /> : <X size={12} className="text-gray-300 shrink-0" />}
+                      <span className={check.passed ? "text-gray-600" : "text-gray-400"}>{check.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {isRegister && (
@@ -149,15 +213,36 @@ export default function LoginPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Confirm Password
               </label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                minLength={8}
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
-                placeholder="Re-enter your password"
-              />
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={8}
+                  className={`w-full px-4 py-2.5 rounded-lg border focus:ring-2 outline-none transition-all text-sm pr-12 ${
+                    confirmTouched
+                      ? passwordsMatch
+                        ? "border-emerald-500 focus:border-emerald-500 focus:ring-emerald-500/20"
+                        : "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                      : "border-gray-200 focus:border-primary focus:ring-primary/20"
+                  }`}
+                  placeholder="Re-enter your password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
+                  aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                >
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {confirmTouched && (
+                <p className={`mt-1 flex items-center gap-1 text-[10px] font-semibold ${passwordsMatch ? "text-emerald-600" : "text-red-500"}`}>
+                  {passwordsMatch ? (<><Check size={12} /> Passwords match</>) : (<><X size={12} /> Passwords do not match</>)}
+                </p>
+              )}
             </div>
           )}
 
