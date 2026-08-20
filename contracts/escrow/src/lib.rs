@@ -16,13 +16,17 @@
 //! 2. **Multi-sig (sender + recipient)**: Both parties must sign to release.
 //!    More decentralized but requires both to be online / cooperative.
 //!
- //! 3. **Oracle / timelock hybrid**: Release is authorized after a time
+//! 3. **Oracle / timelock hybrid**: Release is authorized after a time
 //!    lock OR by an oracle signature. Flexible but more complex.
 //!
 //! See `contracts/escrow/README.md` for the full discussion.
 
 #![no_std]
-use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, Symbol, Vec};
+use soroban_sdk::{
+    contract, contractimpl, contractmeta, token, xdr::ToXdr, Address, BytesN, Env, Symbol,
+};
+
+contractmeta!(key = "RemitX Escrow", val = "0.1.0");
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[soroban_sdk::contracttype]
@@ -62,11 +66,7 @@ impl EscrowContract {
     /// stores an EscrowState. Returns the escrow ID (a hash of the
     /// parameters).
     ///
-    /// TODO(contributor): 
-    /// - Use `env.balance()` or a token contract call to verify the transfer.
-    /// - Generate `escrow_id` as a BytesN<32> hash of (sender, recipient, amount, expires_at).
-    /// - Store the EscrowState under `EscrowDataKey::Escrow(escrow_id)`.
-    /// - Emit an event for off-chain indexing.
+    /// Validates that `amount > 0` and `expires_at` is in the future.
     pub fn deposit(
         env: Env,
         sender: Address,
@@ -75,11 +75,30 @@ impl EscrowContract {
         asset: Address,
         expires_at: u64,
     ) -> BytesN<32> {
-        // TODO(contributor): Implement actual token transfer + storage logic.
-        // This is a scaffold stub.
         sender.require_auth();
 
-        let escrow_id = BytesN::from_array(&env, &[0u8; 32]);
+        // Validate amount is positive
+        if amount <= 0 {
+            panic!("amount must be greater than zero");
+        }
+
+        // Validate expires_at is in the future
+        if expires_at <= env.ledger().timestamp() {
+            panic!("expires_at must be in the future");
+        }
+
+        // Transfer tokens from sender to this contract
+        let token_client = token::Client::new(&env, &asset);
+        token_client.transfer(&sender, &env.current_contract_address(), &amount);
+
+        // Generate a deterministic escrow_id from the parameters
+        let mut hash_input = soroban_sdk::Bytes::new(&env);
+        hash_input.append(&sender.clone().to_xdr(&env));
+        hash_input.append(&recipient.clone().to_xdr(&env));
+        hash_input.append(&soroban_sdk::Bytes::from_array(&env, &amount.to_be_bytes()));
+        hash_input.append(&soroban_sdk::Bytes::from_array(&env, &expires_at.to_be_bytes()));
+        let escrow_id: BytesN<32> = env.crypto().sha256(&hash_input).into();
+
         let state = EscrowState {
             sender,
             recipient,
@@ -90,6 +109,22 @@ impl EscrowContract {
         };
         env.storage().instance().set(&EscrowDataKey::Escrow(escrow_id.clone()), &state);
 
+        // Increment and persist the escrow count
+        let count: u32 = env
+            .storage()
+            .instance()
+            .get(&EscrowDataKey::EscrowCount)
+            .unwrap_or(0);
+        env.storage()
+            .instance()
+            .set(&EscrowDataKey::EscrowCount, &(count + 1));
+
+        // Emit a deposited event for off-chain indexing
+        env.events().publish(
+            (Symbol::new(&env, "deposited"), escrow_id.clone()),
+            (state.recipient, state.amount),
+        );
+
         escrow_id
     }
 
@@ -99,57 +134,80 @@ impl EscrowContract {
     /// as an open design question. See the module-level doc comment and
     /// contracts/escrow/README.md for context.
     ///
-    /// TODO(contributor): Decide on and implement the authorization
-    /// mechanism, then:
-    /// 1. Verify the authorization
-    /// 2. Load the EscrowState and assert it's Locked
-    /// 3. Assert `env.ledger().timestamp() <= state.expires_at`
-    /// 4. Transfer `state.amount` of `state.asset` to `state.recipient`
-    /// 5. Update status to Released and re-store
-    /// 6. Emit event
+    /// Asserts the escrow is `Locked` and not expired before releasing.
     pub fn release(env: Env, escrow_id: BytesN<32>) {
-        // TODO(contributor): Define what authorizes release.
-        // See the open design question at the top of this file.
         let state: EscrowState = env
             .storage()
             .instance()
-            .get(&EscrowDataKey::Escrow(escrow_id))
+            .get(&EscrowDataKey::Escrow(escrow_id.clone()))
             .expect("Escrow not found");
 
-        // Stub: just marks as released without any transfer or auth check
+        // Assert the escrow is Locked
+        if state.status != EscrowStatus::Locked {
+            panic!("escrow is not in Locked status");
+        }
+
+        // Assert the escrow has not expired
+        if env.ledger().timestamp() > state.expires_at {
+            panic!("escrow has expired, use refund() instead");
+        }
+
+        // Transfer funds to the recipient
+        let token_client = token::Client::new(&env, &state.asset);
+        token_client.transfer(&env.current_contract_address(), &state.recipient, &state.amount);
+
         let updated = EscrowState {
             status: EscrowStatus::Released,
             ..state
         };
         env.storage()
             .instance()
-            .set(&EscrowDataKey::Escrow(escrow_id), &updated);
+            .set(&EscrowDataKey::Escrow(escrow_id.clone()), &updated);
+
+        // Emit a released event for off-chain indexing
+        env.events().publish(
+            (Symbol::new(&env, "released"), escrow_id),
+            (updated.recipient, updated.amount),
+        );
     }
 
     /// Refund escrowed funds to the sender if the escrow has expired.
     ///
-    /// TODO(contributor):
-    /// 1. Load the EscrowState and assert it's Locked
-    /// 2. Assert `env.ledger().timestamp() > state.expires_at`
-    /// 3. Transfer `state.amount` of `state.asset` to `state.sender`
-    /// 4. Update status to Refunded or Expired
-    /// 5. Emit event
+    /// Asserts the escrow is `Locked` and has expired before refunding.
     pub fn refund(env: Env, escrow_id: BytesN<32>) {
         let state: EscrowState = env
             .storage()
             .instance()
-            .get(&EscrowDataKey::Escrow(escrow_id))
+            .get(&EscrowDataKey::Escrow(escrow_id.clone()))
             .expect("Escrow not found");
 
-        // TODO(contributor): Implement the time-check + transfer.
-        // Stub: just marks as refunded without any transfer.
+        // Assert the escrow is Locked
+        if state.status != EscrowStatus::Locked {
+            panic!("escrow is not in Locked status");
+        }
+
+        // Assert the escrow has expired
+        if env.ledger().timestamp() <= state.expires_at {
+            panic!("escrow has not expired yet");
+        }
+
+        // Transfer funds back to the sender
+        let token_client = token::Client::new(&env, &state.asset);
+        token_client.transfer(&env.current_contract_address(), &state.sender, &state.amount);
+
         let updated = EscrowState {
             status: EscrowStatus::Refunded,
             ..state
         };
         env.storage()
             .instance()
-            .set(&EscrowDataKey::Escrow(escrow_id), &updated);
+            .set(&EscrowDataKey::Escrow(escrow_id.clone()), &updated);
+
+        // Emit a refunded event for off-chain indexing
+        env.events().publish(
+            (Symbol::new(&env, "refunded"), escrow_id),
+            (updated.sender, updated.amount),
+        );
     }
 
     /// Read-only getter for escrow state.
@@ -160,6 +218,14 @@ impl EscrowContract {
             .instance()
             .get(&EscrowDataKey::Escrow(escrow_id))
             .expect("Escrow not found")
+    }
+
+    /// Read-only getter for the total number of escrows created.
+    pub fn get_escrow_count(env: Env) -> u32 {
+        env.storage()
+            .instance()
+            .get(&EscrowDataKey::EscrowCount)
+            .unwrap_or(0)
     }
 }
 
