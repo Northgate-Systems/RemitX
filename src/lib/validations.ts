@@ -36,3 +36,7 @@ export const rateQuerySchema = z.object({
   from: z.string().min(1).max(10),
   to: z.string().min(1).max(10),
 });
+
+export const transactionIdSchema = z.object({
+  id: z.string().uuid("Invalid transaction ID"),
+});

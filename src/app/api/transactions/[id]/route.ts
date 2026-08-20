@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
+import { transactionIdSchema } from "@/lib/validations";
 import type { Transaction } from "@/lib/types";
 
 export async function GET(
@@ -10,7 +11,12 @@ export async function GET(
   const user = await getCurrentUser();
   if (!user) return unauthorizedResponse();
 
-  const { id } = await params;
+  const parsed = transactionIdSchema.safeParse(await params);
+  if (!parsed.success) {
+    return errorResponse("Invalid transaction ID", 400);
+  }
+
+  const { id } = parsed.data;
 
   const { data: tx, error: txError } = await supabase
     .from("transactions")
@@ -19,7 +25,10 @@ export async function GET(
     .maybeSingle();
 
   if (txError || !tx) return errorResponse("Transaction not found", 404);
-  if ((tx as Transaction).userId !== user.id) return unauthorizedResponse();
+
+  if ((tx as Transaction).userId !== user.id) {
+    return errorResponse("Transaction not found", 404);
+  }
 
   const { data: escrow } = await supabase
     .from("escrows")
