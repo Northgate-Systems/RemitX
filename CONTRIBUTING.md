@@ -1,130 +1,78 @@
 # Contributing to RemitX
 
-Welcome! This guide walks you through how to claim an issue, what to expect, and how payments/grants work for RemitX contributors.
+Thanks for helping with RemitX. This repository mixes product work, SDK-style integration tasks, and grant-style contributor issues, so the fastest way to keep things moving is to claim work clearly and keep the PR scope tight.
 
----
+## Before you start
 
-## Table of Contents
+1. Read the issue all the way through and leave a short comment that you are taking it.
+2. Wait for the maintainer to confirm if the issue asks for assignment or coordination.
+3. Keep one issue per PR unless the maintainer explicitly asks for a bundle.
+4. Work against the current code in `README.md` and the repo itself, not the older framing in `FOUNDATION.md`.
 
-- [Claiming an Issue](#claiming-an-issue)
-- [Expected Turnaround](#expected-turnaround)
-- [How Payment & Grants Work](#how-payment--grants-work)
-- [Development Setup](#development-setup)
-- [Opening a Pull Request](#opening-a-pull-request)
-- [Code Style](#code-style)
-- [Need Help?](#need-help)
+Example claim comment:
 
----
+```text
+/attempt #499
 
-## Claiming an Issue
-
-1. **Browse open issues** at [github.com/Northgate-Systems/RemitX/issues](https://github.com/Northgate-Systems/RemitX/issues).
-2. **Check the labels** — look for `good-first-issue`, `bounty:free`, or `help-wanted` to find contributor-friendly tasks.
-3. **Comment on the issue** to express interest before starting work:
-   ```
-   I'd like to work on this. Estimated completion: <date>
-   ```
-4. **Wait for acknowledgment** from a maintainer before investing significant time on large issues.
-5. **One issue at a time** — please don't claim multiple issues simultaneously until you have a merged PR.
-
-> **Tip:** Issues tagged `good-first-issue` are specifically scoped for new contributors. They come with clear acceptance criteria and focused scope.
-
----
-
-## Expected Turnaround
-
-| Issue Type        | Expected Turnaround |
-|-------------------|---------------------|
-| Documentation     | 2–5 days            |
-| Bug Fix (minor)   | 3–7 days            |
-| Feature (scoped)  | 5–14 days           |
-| Feature (large)   | 14–30 days          |
-
-- **Communicate early** if you need more time. Drop a comment on the issue — maintainers appreciate transparency over silence.
-- Issues with no activity for **14 days** after claiming may be reopened for other contributors.
-
----
-
-## How Payment & Grants Work
-
-RemitX uses a **GrantFox-style** contribution model:
-
-### Free Contributions (`bounty:free`)
-- No monetary reward, but your work is credited in the repo and `CONTRIBUTORS.md`.
-- Great for portfolio, learning, and OSS reputation.
-- Accepted via standard pull request review.
-
-### Paid Bounties (when labeled with a dollar amount)
-1. **Bounty amount** is listed in the issue title and description (e.g., `[$50] Fix X`).
-2. **Claim your work** by commenting `/claim` on the issue when your PR is ready for review.
-3. **Payment is released** after the PR is merged and verified by a maintainer.
-4. **Payment method** will be coordinated via the contact in the issue or via the GrantFox platform linked in the issue.
-5. If no payment platform is linked, contact the maintainer directly via the issue or email listed in the README.
-
-> **Important:** Never send payment details (wallet addresses, bank info) in public comments. Maintainers will reach out privately.
-
----
-
-## Development Setup
-
-```bash
-# 1. Fork and clone the repo
-git clone https://github.com/<your-username>/RemitX.git
-cd RemitX
-
-# 2. Install dependencies
-npm install
-
-# 3. Copy environment variables
-cp .env.example .env.local
-# Fill in your Supabase and other credentials
-
-# 4. Run the development server
-npm run dev
-# App is available at http://localhost:3000
+I can take this one and should have a PR up today.
 ```
 
-### Prerequisites
-- **Node.js** 18+
-- **npm** 9+
-- A **Supabase** project (free tier works fine for local dev)
-- Optional: A Stellar testnet account for payment flow testing
+## Expected turnaround
 
----
+Use these as rough defaults unless the issue says otherwise:
 
-## Opening a Pull Request
+- Small docs or copy fixes: same day, usually within a few hours
+- Focused frontend or API fixes: 1-2 days
+- Larger architecture, contract, or protocol work: agree on scope in the issue before starting
 
-1. **Create a branch** from `main` with a descriptive name:
-   ```bash
-   git checkout -b docs/contributor-onboarding-checklist
-   git checkout -b fix/auth-redirect-loop
-   git checkout -b feat/rate-display-component
-   ```
-2. **Make your changes** and commit with a clear message:
-   ```bash
-   git commit -m "docs: add contributor onboarding checklist"
-   git commit -m "fix: correct auth redirect on logout"
-   ```
-3. **Push and open a PR** targeting the `main` branch of `Northgate-Systems/RemitX`.
-4. **Fill in the PR description** — link the issue with `Closes #<issue-number>`.
-5. **Respond to review comments** promptly. Two rounds of feedback is the norm.
+If you get blocked, leave a short update in the issue instead of going silent. A quick “I’m still on this, PR tomorrow” is enough to prevent duplicate work.
 
----
+## Local setup
 
-## Code Style
+Install dependencies:
 
-- **TypeScript** — all new code must be typed. Avoid `any`.
-- **Prettier** — run `npm run format` before committing.
-- **ESLint** — run `npm run lint` and fix all errors before opening a PR.
-- **Component structure** — follow existing patterns in `src/app` and `src/components`.
-- **Comments** — explain *why*, not *what*. Code should be self-documenting where possible.
+```bash
+npm install
+```
 
----
+Run the app locally:
 
-## Need Help?
+```bash
+npm run dev
+```
 
-- **Open a discussion** on the [GitHub Discussions](https://github.com/Northgate-Systems/RemitX/discussions) tab.
-- **Comment on the issue** you're working on — maintainers monitor all open issues.
-- **Check `FOUNDATION.md`** for a full breakdown of what's been built and what's stubbed out for contributors.
+Run lint before opening a PR:
 
-We appreciate every contribution, big or small. Thank you for helping build RemitX! 🚀
+```bash
+npm run lint
+```
+
+## Pull request checklist
+
+Before opening a PR, make sure you have:
+
+- kept the change focused on the issue you claimed
+- tested the commands or snippets you mention in docs
+- updated docs when behavior changed
+- explained any intentional deviation from the issue in the PR description
+
+A good PR description usually includes:
+
+- what changed
+- how you verified it
+- any follow-up work that should stay out of this PR
+
+## How grants / bounties are handled
+
+If an issue is marked as a bounty or grant task:
+
+1. Claim it in the issue first so maintainers can see it is in progress.
+2. Open a PR that links the issue and describes the verification you ran.
+3. Wait for review and merge confirmation before assuming payout.
+4. If the repo uses a bot or platform-specific command like `/claim`, include it exactly where the issue or maintainer asks for it.
+
+Do not assume every issue is first-come-first-served forever. If maintainers need to reassign stale work, they may do that.
+
+## Scope discipline
+
+The easiest PRs to review here are the ones that do one thing well. If you notice adjacent cleanup while working, mention it in the PR notes instead of quietly expanding the change.

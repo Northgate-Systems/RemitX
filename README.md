@@ -394,6 +394,8 @@ cargo clippy --workspace -- -D warnings  # lint all contracts (warnings are erro
 
 RemitX is an open-source project and welcomes contributions from developers, designers, and community builders. If you believe in affordable, instant cross-border payments and want to help build the infrastructure for the next generation of global finance, we would love to have you.
 
+Start with [`CONTRIBUTING.md`](CONTRIBUTING.md) for the current claim flow, expected turnaround, PR checklist, and bounty/grant notes.
+
 ### Getting Started
 
 1. **Fork** the repository
@@ -414,7 +416,7 @@ RemitX is an open-source project and welcomes contributions from developers, des
 
 ### Looking for a place to start?
 
-Check the [`FOUNDATION.md`](FOUNDATION.md) file - it contains a complete list of `// TODO(contributor)` markers with clear descriptions of what needs to be implemented, including:
+Use the current codebase and this README as the source of truth, then check [`FOUNDATION.md`](FOUNDATION.md) for the intentionally stubbed areas and the full list of `// TODO(contributor)` markers, including:
 
 - Real Stellar transaction building and submission
 - Live Horizon rate fetching with database caching
