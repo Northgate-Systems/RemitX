@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
   } catch (err: unknown) {
     console.error("Send error:", err);
     const message = err instanceof Error ? err.message : "Unknown error";
-    if (message.includes("Invalid recipient")) {
+    if (message.includes("Invalid recipient") || message.includes("Invalid amount")) {
       return errorResponse(message, 400);
     }
     if (message.includes("Request body too large")) {
