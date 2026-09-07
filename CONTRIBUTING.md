@@ -76,3 +76,7 @@ Do not assume every issue is first-come-first-served forever. If maintainers nee
 ## Scope discipline
 
 The easiest PRs to review here are the ones that do one thing well. If you notice adjacent cleanup while working, mention it in the PR notes instead of quietly expanding the change.
+
+## Licensing
+
+The project is MIT-licensed — see [LICENSE](LICENSE). The root `package.json` and `contracts/escrow/Cargo.toml` both declare `license: MIT` so tooling (license scanners, `npm info`, `cargo metadata`) picks it up without having to parse the LICENSE file. MIT doesn't require a header in every source file, and this repo doesn't otherwise use per-file license headers, so none were added — adding them to only some files would be more misleading than having none.
