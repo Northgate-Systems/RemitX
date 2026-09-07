@@ -1,6 +1,7 @@
 import { getCurrentUser } from "@/lib/auth";
 import { getNetworkStatus } from "@/lib/stellar";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
+import { logger } from "@/lib/logger";
 
 export async function GET() {
   try {
@@ -12,7 +13,7 @@ export async function GET() {
     const status = await getNetworkStatus();
     return successResponse(status);
   } catch (err) {
-    console.error("Network status fetch error:", err);
+    logger.error("stellar_status.fetch_error", { err });
     return errorResponse("Failed to fetch network status", 500);
   }
 }

@@ -8,6 +8,7 @@ import {
   BASE_FEE,
 } from "@stellar/stellar-sdk";
 import { getRate } from "@/lib/rates";
+import { logger } from "@/lib/logger";
 
 const NETWORK = process.env.STELLAR_NETWORK || "testnet";
 const HORIZON_URL = process.env.STELLAR_HORIZON_URL || "https://horizon-testnet.stellar.org";
@@ -62,10 +63,13 @@ export async function createTestnetAccount(): Promise<{
       const response = await fetch(friendbotUrl, { method: "GET" });
       if (!response.ok) {
         const body = await response.text();
-        console.warn(`[createTestnetAccount] Friendbot responded with ${response.status}: ${body}`);
+        logger.warn("stellar.friendbot_non_ok_response", {
+          status: response.status,
+          body,
+        });
       }
     } catch (err) {
-      console.warn(`[createTestnetAccount] Friendbot request failed:`, err);
+      logger.warn("stellar.friendbot_request_failed", { err });
     }
   }
 
@@ -185,7 +189,10 @@ export async function submitTransaction(signedXdr: string): Promise<{
     const extras = (err as {
       response?: { data?: { extras?: { result_codes?: unknown } } };
     })?.response?.data?.extras?.result_codes;
-    console.error("[submitTransaction] Horizon rejected the transaction:", extras ?? err);
+    logger.error("stellar.submit_transaction_rejected", {
+      resultCodes: extras,
+      err: extras ? undefined : err,
+    });
     return {
       hash: "",
       status: "failed",

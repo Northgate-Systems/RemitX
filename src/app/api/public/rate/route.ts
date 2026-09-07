@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getRate } from "@/lib/rates";
 import { rateQuerySchema } from "@/lib/validations";
 import { successResponse, errorResponse } from "@/lib/api-response";
+import { logger } from "@/lib/logger";
 
 /**
  * Public, unauthenticated rate lookup - same market data as
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
       source: result.source,
     });
   } catch (err) {
-    console.error("Public rate fetch error:", err);
+    logger.error("public_rate.fetch_error", { err });
     return errorResponse("Failed to fetch exchange rate", 500);
   }
 }

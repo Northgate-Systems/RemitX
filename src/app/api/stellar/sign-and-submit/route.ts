@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth";
 import { submitTransaction, NETWORK_PASSPHRASE } from "@/lib/stellar";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
+import { logger } from "@/lib/logger";
 import type { Transaction } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (updateError || !updated) {
-      console.error("Sign-and-submit update error:", updateError);
+      logger.error("stellar_sign_and_submit.update_error", { err: updateError });
       return errorResponse("Failed to update transaction status", 500);
     }
 
@@ -91,7 +92,7 @@ export async function POST(request: NextRequest) {
       resultCode: result.resultCode,
     });
   } catch (err: unknown) {
-    console.error("Sign-and-submit error:", err);
+    logger.error("stellar_sign_and_submit.error", { err });
     const message = err instanceof Error ? err.message : "Unknown error";
     return errorResponse(message, 500);
   }

@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { buildSendTransaction, fetchRate } from "@/lib/stellar";
 import { stellarSendSchema } from "@/lib/validations";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
+import { logger } from "@/lib/logger";
 import {
   rateLimit,
   sanitizeInput,
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error || !transaction) {
-      console.error("Transaction insert error:", error);
+      logger.error("stellar_send.transaction_insert_error", { err: error });
       return errorResponse("Failed to record transaction", 500);
     }
 
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
       recipientAddress: cleanRecipient,
     }, 201);
   } catch (err: unknown) {
-    console.error("Send error:", err);
+    logger.error("stellar_send.error", { err });
     const message = err instanceof Error ? err.message : "Unknown error";
     if (message.includes("Invalid recipient")) {
       return errorResponse(message, 400);

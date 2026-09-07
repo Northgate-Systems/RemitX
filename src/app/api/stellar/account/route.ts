@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth";
 import { createTestnetAccount } from "@/lib/stellar";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
+import { logger } from "@/lib/logger";
 
 export async function POST() {
   try {
@@ -22,7 +23,7 @@ export async function POST() {
       .eq("id", user.id);
 
     if (error) {
-      console.error("Account update error:", error);
+      logger.error("stellar_account.update_error", { err: error });
       return errorResponse("Failed to save Stellar account", 500);
     }
 
@@ -39,7 +40,7 @@ export async function POST() {
       201
     );
   } catch (err) {
-    console.error("Account creation error:", err);
+    logger.error("stellar_account.creation_error", { err });
     return errorResponse("Failed to create Stellar account", 500);
   }
 }

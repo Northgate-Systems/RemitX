@@ -4,6 +4,7 @@ import { hashPassword, signToken, setSessionCookie, toSafeUser } from "@/lib/aut
 import { registerSchema } from "@/lib/validations";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 import { successResponse, errorResponse } from "@/lib/api-response";
+import { logger } from "@/lib/logger";
 import type { User } from "@/lib/types";
 import {
   rateLimit,
@@ -62,9 +63,13 @@ export async function POST(request: NextRequest) {
       stellarPublicKey = account.publicKey;
       // TODO(product): In production, return the secret key to the user once for safekeeping.
       // Do NOT store it server-side. For testnet Dev UX we log it.
-      console.log(`[DEV] New user ${cleanEmail} Stellar secret: ${account.secretKey}`);
+      logger.info("auth_register.dev_stellar_secret", {
+        dev: true,
+        email: cleanEmail,
+        stellarSecret: account.secretKey,
+      });
     } catch (err) {
-      console.warn("Stellar account creation failed, continuing without one:", err);
+      logger.warn("auth_register.stellar_account_creation_failed", { err });
     }
 
     const { data: user, error } = await supabase
@@ -83,7 +88,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error || !user) {
-      console.error("Registration insert error:", error);
+      logger.error("auth_register.insert_error", { err: error });
       return errorResponse("Internal server error", 500);
     }
 
@@ -95,7 +100,7 @@ export async function POST(request: NextRequest) {
 
     return successResponse({ user: safeUser }, 201);
   } catch (err) {
-    console.error("Registration error:", err);
+    logger.error("auth_register.error", { err });
     const message = err instanceof Error ? err.message : "";
     if (message.includes("SUPABASE_SERVICE_ROLE_KEY") || message.includes("NEXT_PUBLIC_SUPABASE_URL")) {
       return errorResponse("Database not configured. Add SUPABASE_SERVICE_ROLE_KEY and NEXT_PUBLIC_SUPABASE_URL to your .env file.", 500);

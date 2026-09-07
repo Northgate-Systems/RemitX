@@ -4,6 +4,7 @@ import { verifyPassword, signToken, setSessionCookie, toSafeUser } from "@/lib/a
 import { loginSchema } from "@/lib/validations";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 import { successResponse, errorResponse } from "@/lib/api-response";
+import { logger } from "@/lib/logger";
 import type { User } from "@/lib/types";
 import {
   rateLimit,
@@ -88,7 +89,7 @@ export async function POST(request: NextRequest) {
 
     return successResponse({ user: safeUser });
   } catch (err) {
-    console.error("Login error:", err);
+    logger.error("auth_login.error", { err });
     const message = err instanceof Error ? err.message : "";
     if (message.includes("SUPABASE_SERVICE_ROLE_KEY") || message.includes("NEXT_PUBLIC_SUPABASE_URL")) {
       return errorResponse("Database not configured. Add SUPABASE_SERVICE_ROLE_KEY and NEXT_PUBLIC_SUPABASE_URL to your .env file.", 500);

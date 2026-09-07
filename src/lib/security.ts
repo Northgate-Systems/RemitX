@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import { logger, securityEventLevel } from "./logger";
 
 /**
  * ── Security utilities for RemitX ────────────────────────────────────────
@@ -133,13 +134,11 @@ export function logSecurityEvent(
   type: SecurityEventType,
   details: Record<string, unknown> = {}
 ): void {
-  const entry = {
-    type,
-    ts: new Date().toISOString(),
-    ...details,
-  };
   // In production, send to a logging service (Sentry, Datadog, etc.)
-  console.log(`[SECURITY] ${JSON.stringify(entry)}`);
+  // Events that indicate something was blocked or is worth flagging log at
+  // "warn" so aggregators can alert on them; routine audit trail events
+  // (login_success, register, logout, ...) stay at "info".
+  logger[securityEventLevel(type)](`security.${type}`, { type, ...details });
 }
 
 // ── Account lockout ─────────────────────────────────────────────────────

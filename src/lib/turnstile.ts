@@ -8,6 +8,8 @@
  * it's enforced as soon as TURNSTILE_SECRET_KEY is set.
  */
 
+import { logger } from "./logger";
+
 const VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 
 export async function verifyTurnstileToken(token: string | undefined | null): Promise<{
@@ -17,9 +19,9 @@ export async function verifyTurnstileToken(token: string | undefined | null): Pr
   const secret = process.env.TURNSTILE_SECRET_KEY;
 
   if (!secret) {
-    console.warn(
-      "[turnstile] TURNSTILE_SECRET_KEY not set - skipping verification. Set it in .env before going to production."
-    );
+    logger.warn("turnstile.secret_key_not_set", {
+      hint: "Set TURNSTILE_SECRET_KEY before going to production - verification is being skipped.",
+    });
     return { success: true };
   }
 

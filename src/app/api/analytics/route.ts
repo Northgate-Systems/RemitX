@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { rateLimit, logSecurityEvent } from "@/lib/security";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: Request) {
   try {
@@ -15,16 +16,14 @@ export async function POST(request: Request) {
 
     // In production, this would write to a database or analytics service.
     // For now, we log to server console (Vercel logs) for visibility.
-    console.log(
-      JSON.stringify({
-        type: "pageview",
-        url: url || "/",
-        referrer: referrer || "",
-        ts: ts || Date.now(),
-        ip,
-        userAgent: request.headers.get("user-agent") || "unknown",
-      })
-    );
+    logger.info("analytics.pageview", {
+      type: "pageview",
+      url: url || "/",
+      referrer: referrer || "",
+      eventTs: ts || Date.now(),
+      ip,
+      userAgent: request.headers.get("user-agent") || "unknown",
+    });
 
     return NextResponse.json({ success: true });
   } catch {
