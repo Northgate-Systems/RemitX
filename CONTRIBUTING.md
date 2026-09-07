@@ -35,6 +35,8 @@ Install dependencies:
 npm install
 ```
 
+Running `npm install` also sets up a Husky `commit-msg` hook (via the `prepare` script) that enforces [Conventional Commits](https://www.conventionalcommits.org/) on every commit, e.g. `fix: correct recipient checksum validation` or `docs: add anchors onboarding guide`. If a commit is rejected, the error tells you exactly which part of the message is wrong - most commonly a missing `type:` prefix. This is enforced locally only for now; there's no CI re-check since the repo doesn't have GitHub Actions workflows configured yet.
+
 Run the app locally:
 
 ```bash
