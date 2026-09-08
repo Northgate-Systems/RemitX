@@ -446,3 +446,6 @@ For partnerships, sponsorships, or general questions about RemitX, please reach 
 ---
 
 **RemitX - Moving money across borders, at the speed of light. Built on the Stellar Network. 🌟**
+## Code of Conduct
+
+See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
