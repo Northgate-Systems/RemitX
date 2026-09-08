@@ -3,22 +3,27 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Landmark } from "lucide-react";
 
-const PAGES: Record<string, { title: string; body: string }> = {
+const PAGES: Record<string, { title: string; body: string[] }> = {
   privacy: {
     title: "Privacy Policy",
-    body: "RemitX is currently in active development on Stellar testnet. A full privacy policy will be published here before any mainnet launch or handling of real user data.",
+    body: [
+      "RemitX is currently in active development on Stellar testnet. A full privacy policy will be published here before any mainnet launch or handling of real user data.",
+      "What we currently track: page-view analytics only, and only after you click \"Accept All\" on the cookie banner. Each tracked page view records the page URL, the referring page, a timestamp, your IP address, and your browser's user-agent string. This is used solely for basic traffic visibility during development - it is not sold, shared with third parties, or used for ad targeting.",
+      "If you click \"Decline\" on the cookie banner, or simply close it without choosing, no analytics data is sent for that visit. You can change your choice at any time by clearing the \"remitx_cookie_consent\" value from your browser's local storage, which will show the banner again on your next page load.",
+      "Account data you provide directly (email, name, Stellar public key) is stored to operate the product and is covered separately under Compliance, not by this analytics tracking.",
+    ],
   },
   terms: {
     title: "Terms of Service",
-    body: "Terms of service will be published here before mainnet launch. Everything in this product today runs on Stellar testnet for development and demonstration purposes only.",
+    body: ["Terms of service will be published here before mainnet launch. Everything in this product today runs on Stellar testnet for development and demonstration purposes only."],
   },
   compliance: {
     title: "Compliance",
-    body: "RemitX has not yet completed KYC/AML or regulatory review in any jurisdiction. No real funds move through this product today - it operates on Stellar testnet only.",
+    body: ["RemitX has not yet completed KYC/AML or regulatory review in any jurisdiction. No real funds move through this product today - it operates on Stellar testnet only."],
   },
   security: {
     title: "Security",
-    body: "Found a security issue? Please report it via the Support page rather than a public GitHub issue. RemitX is pre-audit and testnet-only - do not use real Stellar secret keys with this product.",
+    body: ["Found a security issue? Please report it via the Support page rather than a public GitHub issue. RemitX is pre-audit and testnet-only - do not use real Stellar secret keys with this product."],
   },
 };
 
@@ -60,7 +65,11 @@ export default async function LegalPage({ params }: { params: Promise<{ slug: st
           <Landmark size={18} /> RemitX
         </Link>
         <h1 className="text-2xl font-bold text-gray-800">{page.title}</h1>
-        <p className="text-sm text-gray-600 leading-relaxed">{page.body}</p>
+        {page.body.map((paragraph, i) => (
+          <p key={i} className="text-sm text-gray-600 leading-relaxed">
+            {paragraph}
+          </p>
+        ))}
       </div>
     </main>
   );
