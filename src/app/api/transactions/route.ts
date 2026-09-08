@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth";
 import { successResponse, unauthorizedResponse } from "@/lib/api-response";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
       .range(offset, offset + limit - 1);
 
     if (error) {
-      console.error("Transactions fetch error:", error);
+      logger.error("transactions.fetch_error", { err: error });
       return unauthorizedResponse();
     }
 
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
       offset,
     });
   } catch (err) {
-    console.error("Transactions fetch error:", err);
+    logger.error("transactions.fetch_error", { err });
     return unauthorizedResponse();
   }
 }

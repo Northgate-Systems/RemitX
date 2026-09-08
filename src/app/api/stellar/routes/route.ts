@@ -3,6 +3,7 @@ import { Asset } from "@stellar/stellar-sdk";
 import { getCurrentUser } from "@/lib/auth";
 import { server } from "@/lib/stellar";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
+import { logger } from "@/lib/logger";
 
 function resolvePathAsset(code: string): Asset {
   const upper = code.toUpperCase();
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest) {
 
     return successResponse({ routes, from: from.toUpperCase(), to: to.toUpperCase(), amount });
   } catch (err: unknown) {
-    console.error("Routes fetch error:", err);
+    logger.error("stellar_routes.fetch_error", { err });
     const message = err instanceof Error ? err.message : "Failed to fetch routes";
     return errorResponse(message, 500);
   }

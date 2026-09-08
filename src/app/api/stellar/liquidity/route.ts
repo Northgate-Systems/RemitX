@@ -3,6 +3,7 @@ import { Asset } from "@stellar/stellar-sdk";
 import { getCurrentUser } from "@/lib/auth";
 import { server } from "@/lib/stellar";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
+import { logger } from "@/lib/logger";
 
 /** Real Horizon liquidity pool reserves for a given asset code (top pool by
  * reserve size). Returns null data if the asset has no configured issuer or
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (err: unknown) {
-    console.error("Liquidity fetch error:", err);
+    logger.error("stellar_liquidity.fetch_error", { err });
     return errorResponse(err instanceof Error ? err.message : "Failed to fetch liquidity", 500);
   }
 }

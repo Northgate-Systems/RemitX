@@ -1,6 +1,7 @@
 import { getCurrentUser } from "@/lib/auth";
 import { getAccountBalances } from "@/lib/stellar";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
+import { logger } from "@/lib/logger";
 
 export async function GET() {
   try {
@@ -16,7 +17,7 @@ export async function GET() {
     const balances = await getAccountBalances(user.stellarPublicKey);
     return successResponse({ activated: true, balances });
   } catch (err) {
-    console.error("Balance fetch error:", err);
+    logger.error("stellar_balance.fetch_error", { err });
     return errorResponse("Failed to fetch account balance", 500);
   }
 }

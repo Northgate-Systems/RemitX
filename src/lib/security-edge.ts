@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logger, securityEventLevel } from "./logger";
 
 /**
  * Edge-runtime-safe security utilities.
@@ -37,10 +38,5 @@ export function logSecurityEvent(
   type: string,
   details: Record<string, unknown> = {}
 ): void {
-  const entry = {
-    type,
-    ts: new Date().toISOString(),
-    ...details,
-  };
-  console.log(`[SECURITY] ${JSON.stringify(entry)}`);
+  logger[securityEventLevel(type)](`security.${type}`, { type, ...details });
 }

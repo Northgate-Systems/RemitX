@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { submitTransaction } from "@/lib/stellar";
 import { stellarSubmitSchema } from "@/lib/validations";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
+import { logger } from "@/lib/logger";
 import type { Transaction } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (updateError || !updated) {
-      console.error("Submit update error:", updateError);
+      logger.error("stellar_submit.update_error", { err: updateError });
       return errorResponse("Failed to update transaction status", 500);
     }
 
@@ -76,7 +77,7 @@ export async function POST(request: NextRequest) {
       toAmount: finalTx.toAmount,
     });
   } catch (err: unknown) {
-    console.error("Submit error:", err);
+    logger.error("stellar_submit.error", { err });
     const message = err instanceof Error ? err.message : "Unknown error";
     return errorResponse(message, 500);
   }

@@ -15,6 +15,8 @@
  * Fallback chain: Memory cache → API fetch → "1.00"
  */
 
+import { logger } from "./logger";
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -279,7 +281,7 @@ export async function getRate(
   // ---- Step 3: Hardcoded fallback ----
   const fallback = getFallbackRate(from, to);
   if (fallback) {
-    console.warn(`[rates] Using hardcoded fallback for ${from}→${to}`);
+    logger.warn("rates.fallback_used", { from, to });
     setCachedRate(from, to, fallback);
     return {
       rate: fallback,
@@ -291,9 +293,7 @@ export async function getRate(
   }
 
   // ---- Step 4: Absolute last resort ----
-  console.warn(
-    `[rates] No rate available for ${from}→${to}, returning 1.00`
-  );
+  logger.warn("rates.no_rate_available", { from, to, returned: "1.00" });
   return {
     rate: "1.00",
     fromAsset: from,
@@ -346,7 +346,5 @@ export async function refreshAllRates(): Promise<void> {
     await new Promise((r) => setTimeout(r, 200));
   }
 
-  console.log(
-    `[rates] refreshAllRates complete: ${successCount} ok, ${failCount} failed`
-  );
+  logger.info("rates.refresh_all_complete", { successCount, failCount });
 }

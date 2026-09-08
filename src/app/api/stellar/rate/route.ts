@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { getRate } from "@/lib/rates";
 import { rateQuerySchema } from "@/lib/validations";
 import { successResponse, errorResponse } from "@/lib/api-response";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
       source: result.source,
     });
   } catch (err) {
-    console.error("Rate fetch error:", err);
+    logger.error("stellar_rate.fetch_error", { err });
     return errorResponse("Failed to fetch exchange rate", 500);
   }
 }

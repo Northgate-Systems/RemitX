@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { hashPassword } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-response";
+import { logger } from "@/lib/logger";
 import {
   validateResetToken,
   rateLimit,
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error || !user) {
-      console.error("Password reset update error:", error);
+      logger.error("auth_reset_password.update_error", { err: error });
       return errorResponse("Failed to reset password", 500);
     }
 
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
       message: "Password reset successfully. Please sign in with your new password.",
     });
   } catch (err) {
-    console.error("Reset password error:", err);
+    logger.error("auth_reset_password.error", { err });
     return errorResponse("Internal server error", 500);
   }
 }

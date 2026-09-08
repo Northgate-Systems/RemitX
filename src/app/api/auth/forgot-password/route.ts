@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { successResponse, errorResponse } from "@/lib/api-response";
 import { generateResetToken, rateLimit, sanitizeEmail, logSecurityEvent } from "@/lib/security";
+import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,7 +35,12 @@ export async function POST(request: NextRequest) {
       // In production, send email with reset link:
       // https://remitx.app/reset-password?token=...
       // For dev, log the token (testnet-only)
-      console.log(`[DEV] Password reset token for ${email}: ${token} (expires ${new Date(expiresAt).toISOString()})`);
+      logger.info("auth_forgot_password.dev_reset_token", {
+        dev: true,
+        email,
+        token,
+        expiresAt: new Date(expiresAt).toISOString(),
+      });
     }
 
     // Always return the same response to prevent user enumeration
@@ -42,7 +48,7 @@ export async function POST(request: NextRequest) {
       message: "If an account exists with that email, a reset link has been sent.",
     });
   } catch (err) {
-    console.error("Forgot password error:", err);
+    logger.error("auth_forgot_password.error", { err });
     return errorResponse("Internal server error", 500);
   }
 }
