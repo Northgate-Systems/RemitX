@@ -8,6 +8,7 @@ import {
   BASE_FEE,
 } from "@stellar/stellar-sdk";
 import { getRate } from "@/lib/rates";
+import { isStellarPublicKey } from "@/lib/validations";
 
 const NETWORK = process.env.STELLAR_NETWORK || "testnet";
 const HORIZON_URL = process.env.STELLAR_HORIZON_URL || "https://horizon-testnet.stellar.org";
@@ -26,8 +27,6 @@ export const server = new Horizon.Server(HORIZON_URL);
 // than silently using a fake issuer.
 // ---------------------------------------------------------------------------
 
-const STELLAR_PUBKEY_RE = /^G[A-Z2-7]{55}$/;
-
 /** Resolve a currency/asset code to a Stellar Asset. XLM is native; every
  * other asset needs its issuer's public key set as STELLAR_<CODE>_ISSUER. */
 function resolveAsset(code: string): Asset {
@@ -41,7 +40,7 @@ function resolveAsset(code: string): Asset {
       `No configured Stellar issuer for asset ${upper}. Set ${envKey} in .env to the anchor's issuing account before this corridor can go live.`
     );
   }
-  if (!STELLAR_PUBKEY_RE.test(issuer)) {
+  if (!isStellarPublicKey(issuer)) {
     throw new Error(`${envKey} is not a valid Stellar public key.`);
   }
   return new Asset(upper, issuer);
@@ -125,8 +124,19 @@ export async function buildSendTransaction(params: {
 }): Promise<string> {
   const { sourcePublicKey, fromAsset, toAsset, fromAmount, toAmount, recipientAddress } = params;
 
-  if (!STELLAR_PUBKEY_RE.test(recipientAddress)) {
+  // Checked before any Horizon call: the SDK rejects a bad destination or an
+  // over-precise amount only when the operation is built, which is after
+  // loadAccount() below - so without these guards a typo'd address cost a
+  // network round-trip and surfaced as a 500 instead of a 400.
+  if (!isStellarPublicKey(recipientAddress)) {
     throw new Error("Invalid recipient address");
+  }
+  for (const [label, value] of [["send", fromAmount], ["destination", toAmount]] as const) {
+    if (!/^\d+(\.\d+)?$/.test(value) || (value.split(".")[1]?.length ?? 0) > 7) {
+      throw new Error(
+        `Invalid amount: the ${label} amount must be a positive number with at most 7 decimal places`
+      );
+    }
   }
 
   const sendAsset = resolveAsset(fromAsset);
