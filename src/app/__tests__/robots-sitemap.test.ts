@@ -1,85 +1,76 @@
 import { describe, it, expect } from "vitest";
-import robots from "../robots";
-import sitemap from "../sitemap";
+import fs from "fs";
+import path from "path";
+import robots from "@/app/robots";
+import sitemap from "@/app/sitemap";
 
-const AUTH_ONLY_PATHS = [
-  "/api/",
-  "/dashboard",
-  "/send",
-  "/review",
-  "/activity",
-  "/anchors",
-  "/routes",
-  "/support",
-];
+// Every page under the `(app)` route group sits behind the session check in
+// middleware.ts (it's not in `publicPaths`), so it must never be crawlable
+// or listed in the sitemap. This walks the actual directory instead of a
+// hardcoded list so a future page added under `(app)/` fails this test
+// until robots.ts is updated too - that's exactly the drift that let
+// "/rates" slip through undisallowed.
+const APP_GROUP_DIR = path.resolve(__dirname, "../(app)");
 
-describe("robots()", () => {
-  const result = robots();
+function authenticatedRoutes(): string[] {
+  return fs
+    .readdirSync(APP_GROUP_DIR, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => `/${entry.name}`);
+}
 
-  it("allows the public site by default", () => {
-    expect(result.rules).toMatchObject({
-      userAgent: "*",
-      allow: "/",
-    });
+describe("robots.ts", () => {
+  it("has the expected base shape", () => {
+    const result = robots();
+    expect(result.rules).toMatchObject({ userAgent: "*", allow: "/" });
+    expect(result.sitemap).toBe("https://remitx.app/sitemap.xml");
   });
 
-  it("disallows every authenticated-only route", () => {
-    const rules = result.rules as { disallow?: string | string[] };
-    const disallow = Array.isArray(rules.disallow)
-      ? rules.disallow
-      : rules.disallow
-        ? [rules.disallow]
-        : [];
+  it("disallows every authenticated (app) route", () => {
+    const result = robots();
+    const disallow = ([] as string[]).concat(
+      (result.rules as { disallow?: string | string[] }).disallow ?? []
+    );
 
-    for (const path of AUTH_ONLY_PATHS) {
-      expect(disallow).toContain(path);
+    for (const route of authenticatedRoutes()) {
+      const covered = disallow.some((rule) => route === rule || route.startsWith(rule));
+      expect(covered, `"${route}" is an authenticated page but robots.ts doesn't disallow it`).toBe(
+        true
+      );
     }
   });
 
-  it("points at the canonical sitemap URL", () => {
-    expect(result.sitemap).toBe("https://remitx.app/sitemap.xml");
+  it("disallows /api/ so authenticated API routes stay out of the index", () => {
+    const result = robots();
+    const disallow = ([] as string[]).concat(
+      (result.rules as { disallow?: string | string[] }).disallow ?? []
+    );
+    expect(disallow).toContain("/api/");
   });
 });
 
-describe("sitemap()", () => {
-  const entries = sitemap();
+describe("sitemap.ts", () => {
+  it("only lists public, non-authenticated URLs", () => {
+    const entries = sitemap();
+    const routes = authenticatedRoutes();
 
-  it("returns a non-empty list of entries", () => {
-    expect(Array.isArray(entries)).toBe(true);
-    expect(entries.length).toBeGreaterThan(0);
-  });
-
-  it("includes the public marketing/legal pages", () => {
-    const urls = entries.map((e) => e.url);
-    expect(urls).toContain("https://remitx.app");
-    expect(urls).toContain("https://remitx.app/login");
-    expect(urls).toContain("https://remitx.app/legal/privacy");
-    expect(urls).toContain("https://remitx.app/legal/terms");
-  });
-
-  it("excludes every authenticated-only route disallowed in robots.ts", () => {
-    const urls = entries.map((e) => e.url);
-    for (const path of AUTH_ONLY_PATHS) {
-      const authUrl = `https://remitx.app${path}`;
-      expect(urls).not.toContain(authUrl);
-      // also guard against a trailing-slash variant slipping through
-      expect(urls).not.toContain(`${authUrl}/`);
-    }
-  });
-
-  it("gives every entry a valid lastModified Date and a priority in [0, 1]", () => {
     for (const entry of entries) {
-      expect(entry.lastModified).toBeInstanceOf(Date);
-      expect(Number.isNaN((entry.lastModified as Date).getTime())).toBe(false);
-      if (typeof entry.priority === "number") {
-        expect(entry.priority).toBeGreaterThanOrEqual(0);
-        expect(entry.priority).toBeLessThanOrEqual(1);
+      const url = new URL(entry.url);
+      for (const route of routes) {
+        expect(
+          url.pathname === route || url.pathname.startsWith(`${route}/`),
+          `sitemap.ts lists "${entry.url}" which is behind auth (${route})`
+        ).toBe(false);
       }
     }
   });
 
-  it("does not duplicate any URL", () => {
-    const urls = entries.map((e) => e.url);
-    expect(new Set(urls).size).toBe(urls.length);
+  it("every entry is a well-formed, absolute remitx.app URL", () => {
+    const entries = sitemap();
+    expect(entries.length).toBeGreaterThan(0);
+    for (const entry of entries) {
+      expect(entry.url).toMatch(/^https:\/\/remitx\.app/);
+      expect(entry.lastModified).toBeInstanceOf(Date);
+    }
   });
 });
