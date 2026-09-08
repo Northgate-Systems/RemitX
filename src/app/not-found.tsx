@@ -1,7 +1,14 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Landmark, Home, ArrowLeft } from "lucide-react";
+import { getNotFoundContext } from "@/lib/notFoundContext";
 
 export default function NotFound() {
+  const pathname = usePathname();
+  const { heading, message, backHref, backLabel } = getNotFoundContext(pathname);
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-50 flex items-center justify-center px-4">
       <div className="max-w-md w-full text-center">
@@ -15,20 +22,19 @@ export default function NotFound() {
         </div>
 
         <h1 className="text-2xl lg:text-3xl font-bold text-primary mb-3 animate-slide-blur">
-          Page not found
+          {heading}
         </h1>
         <p className="text-sm text-gray-500 mb-8 animate-slide-blur delay-100">
-          The page you're looking for doesn't exist or has been moved.
-          Let's get you back on track.
+          {message}
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center animate-slide-blur delay-200">
           <Link
-            href="/"
+            href={backHref}
             className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-xl text-sm font-semibold hover:shadow-lg transition-all active:scale-95"
           >
             <Home size={16} />
-            Back to Home
+            {backLabel}
           </Link>
           <Link
             href="/login"
