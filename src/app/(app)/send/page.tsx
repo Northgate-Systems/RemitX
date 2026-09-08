@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRightLeft, AtSign, ArrowRight, Info, RefreshCw } from "lucide-react";
+import { formatAmount } from "@/lib/formatCurrency";
 
 const ASSETS = ["XLM", "USDC", "USD", "NGN", "PHP", "GBP"];
 const QUOTE_REFRESH_MS = 15_000;
@@ -152,7 +153,7 @@ export default function SendMoneyPage() {
                       className="flex-1 px-4 py-3.5 border-none text-lg font-bold bg-gray-50 focus:ring-0 text-gray-500 outline-none"
                       readOnly
                       type="text"
-                      value={rateLoading ? "…" : converted.toFixed(2)}
+                      value={rateLoading ? "…" : formatAmount(converted, toAsset)}
                     />
                     <select
                       value={toAsset}
@@ -210,7 +211,7 @@ export default function SendMoneyPage() {
                   <div className="flex flex-col items-center py-1">
                     <span className="text-[10px] opacity-70 uppercase tracking-widest mb-1">Recipient Receives</span>
                     <div className="flex items-baseline gap-1.5">
-                      <span className="text-2xl lg:text-3xl font-bold">{rateLoading ? "…" : converted.toFixed(2)}</span>
+                      <span className="text-2xl lg:text-3xl font-bold">{rateLoading ? "…" : formatAmount(converted, toAsset)}</span>
                       <span className="text-sm">{toAsset}</span>
                     </div>
                   </div>

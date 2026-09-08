@@ -8,6 +8,7 @@ import {
   Download,
   BadgeCheck,
 } from "lucide-react";
+import { formatCurrency } from "@/lib/formatCurrency";
 
 interface AnchorRow {
   id: string;
@@ -183,7 +184,7 @@ export default function AnchorsPage() {
                       </td>
                       <td className="py-3 px-4 text-right">
                         <p className="text-sm font-bold text-secondary">{a.feePercent}%</p>
-                        <p className="text-[9px] text-gray-400 font-semibold uppercase">Est: ${a.estimatedFee.toFixed(2)}</p>
+                        <p className="text-[9px] text-gray-400 font-semibold uppercase">Est: {formatCurrency(a.estimatedFee, "USD")}</p>
                       </td>
                       <td className="py-3 px-4 text-right hidden md:table-cell">
                         <p className="text-xs font-semibold text-gray-600">{a.typicalSettlement}</p>

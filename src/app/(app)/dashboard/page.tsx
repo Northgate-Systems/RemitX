@@ -12,6 +12,7 @@ import {
   ArrowRight,
   Activity as ActivityIcon,
 } from "lucide-react";
+import { formatCurrency } from "@/lib/formatCurrency";
 
 interface Balance {
   asset: string;
@@ -186,7 +187,7 @@ export default function DashboardPage() {
                     ) : (
                       <div className="mb-4">
                         <p className="text-2xl lg:text-3xl font-bold leading-none mb-1">
-                          {xlmBalance ? `${parseFloat(xlmBalance.balance).toFixed(2)} XLM` : "0.00 XLM"}
+                          {xlmBalance ? formatCurrency(xlmBalance.balance, "XLM") : formatCurrency(0, "XLM")}
                         </p>
                         <p className="text-xs text-white/70">Testnet balance, live from Horizon</p>
                       </div>
@@ -217,7 +218,7 @@ export default function DashboardPage() {
                           .filter((b) => b.asset !== "XLM")
                           .map((b) => (
                             <p key={b.asset} className="text-lg font-bold text-gray-800">
-                              {parseFloat(b.balance).toFixed(2)} {b.asset}
+                              {formatCurrency(b.balance, b.asset)}
                             </p>
                           ))}
                       </div>
