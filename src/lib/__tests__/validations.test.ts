@@ -101,7 +101,12 @@ describe("loginSchema", () => {
 });
 
 describe("stellarSendSchema", () => {
-  const VALID_RECIPIENT = "G" + "A".repeat(55);
+  // A regex-shaped-but-fake address like "G" + "A".repeat(55) passed this
+  // schema back when it only checked the shape. It no longer does now that
+  // #424 added a real checksum refine (isValidStellarPublicKey), so the
+  // fixture needs to be an address with a valid CRC16 checksum, not just
+  // the right length/charset.
+  const VALID_RECIPIENT = "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN7";
 
   it("accepts a well-formed send request", () => {
     const result = stellarSendSchema.safeParse({

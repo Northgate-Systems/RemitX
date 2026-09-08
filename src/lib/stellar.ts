@@ -114,6 +114,71 @@ export async function getNetworkStatus(): Promise<{
   };
 }
 
+export interface FeeEstimate {
+  /** Network minimum per operation, in stroops - what a transaction pays
+   * when there's no congestion. */
+  baseFeeStroops: number;
+  /** A sane default to pre-fill in the UI: the median fee actually being
+   * charged right now, floored at the base fee so it's never lower. */
+  recommendedFeeStroops: number;
+  /** True once the median charged fee rises above the flat network
+   * minimum - i.e. the ledger is full enough that submitters are bidding
+   * fees up to get included. */
+  isSurgePricing: boolean;
+  /** How full the last closed ledger's operation capacity was, 0-100. */
+  ledgerCapacityUsagePct: number;
+  /** Fee-charged percentiles (stroops) from Horizon's rolling fee stats,
+   * for callers that want to show "pay this much to land in N seconds"
+   * instead of just one recommended number. */
+  percentiles: {
+    p10: number;
+    p20: number;
+    p30: number;
+    p40: number;
+    p50: number;
+    p60: number;
+    p70: number;
+    p80: number;
+    p90: number;
+    p95: number;
+    p99: number;
+  };
+}
+
+/** Current network fee estimate, including surge-pricing detection, for
+ * showing an accurate "here's what this will cost" before the user
+ * confirms a send instead of a hardcoded BASE_FEE. */
+export async function getFeeEstimate(): Promise<FeeEstimate> {
+  const stats = await server.feeStats();
+  const toInt = (s: string) => parseInt(s, 10);
+  const charged = stats.fee_charged;
+  const percentiles = {
+    p10: toInt(charged.p10),
+    p20: toInt(charged.p20),
+    p30: toInt(charged.p30),
+    p40: toInt(charged.p40),
+    p50: toInt(charged.p50),
+    p60: toInt(charged.p60),
+    p70: toInt(charged.p70),
+    p80: toInt(charged.p80),
+    p90: toInt(charged.p90),
+    p95: toInt(charged.p95),
+    p99: toInt(charged.p99),
+  };
+  const baseFeeStroops = toInt(BASE_FEE);
+  const ledgerCapacityUsagePct = Math.round(
+    parseFloat(stats.ledger_capacity_usage) * 100
+  );
+
+  return {
+    baseFeeStroops,
+    recommendedFeeStroops: Math.max(percentiles.p50, baseFeeStroops),
+    isSurgePricing: percentiles.p50 > baseFeeStroops,
+    ledgerCapacityUsagePct,
+    percentiles,
+  };
+}
+
 /** Build a path_payment_strict_send transaction and return unsigned XDR */
 export async function buildSendTransaction(params: {
   sourcePublicKey: string;
