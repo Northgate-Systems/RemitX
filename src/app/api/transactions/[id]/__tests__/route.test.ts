@@ -92,6 +92,18 @@ describe("GET /api/transactions/[id]", () => {
     expect(res.status).toBe(404);
   });
 
+  it("returns 500 (not 404) when the lookup query itself fails", async () => {
+    // A DB/connection error is a different failure mode than "no row with
+    // this id" and must not be reported to the client as a 404 - the two
+    // used to share the same `txError || !tx` branch.
+    vi.mocked(getCurrentUser).mockResolvedValue(fakeUser());
+    mockMaybeSingle.mockResolvedValue({ data: null, error: { message: "connection reset" } });
+    const res = await GET(makeRequest(TX_ID), makeParams(TX_ID));
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body.error).toBe("Failed to fetch transaction");
+  });
+
   it("returns 404 when transaction belongs to another user (IDOR prevention)", async () => {
     vi.mocked(getCurrentUser).mockResolvedValue(fakeUser(OWNER_ID));
     mockMaybeSingle
