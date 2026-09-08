@@ -40,3 +40,15 @@ export const rateQuerySchema = z.object({
 export const transactionIdSchema = z.object({
   id: z.string().uuid("Invalid transaction ID"),
 });
+
+// page/pageSize come from URLSearchParams as strings (or are absent), hence
+// z.coerce + defaults rather than requiring the caller to always pass both.
+export const paginationQuerySchema = z.object({
+  page: z.coerce.number().int("page must be an integer").min(1, "page must be at least 1").default(1),
+  pageSize: z.coerce
+    .number()
+    .int("pageSize must be an integer")
+    .min(1, "pageSize must be at least 1")
+    .max(100, "pageSize must be at most 100")
+    .default(20),
+});
