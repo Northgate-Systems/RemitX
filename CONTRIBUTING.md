@@ -76,3 +76,7 @@ Do not assume every issue is first-come-first-served forever. If maintainers nee
 ## Scope discipline
 
 The easiest PRs to review here are the ones that do one thing well. If you notice adjacent cleanup while working, mention it in the PR notes instead of quietly expanding the change.
+
+## Dependency updates
+
+Dependabot is configured in `.github/dependabot.yml` for the root `npm` app, the `contracts/escrow` Cargo crate, and any GitHub Actions used in the repo, all on a weekly schedule. It opens its own PRs against `main` — treat those PRs like any other contribution (read the changelog for anything non-trivial before approving, and let CI run once workflows exist).

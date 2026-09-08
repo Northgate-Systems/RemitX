@@ -1,0 +1,33 @@
+version: 2
+updates:
+  # Root Next.js app dependencies (package.json)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "npm"
+    groups:
+      dev-dependencies:
+        dependency-type: "development"
+
+  # Soroban escrow contract (contracts/escrow/Cargo.toml)
+  - package-ecosystem: "cargo"
+    directory: "/contracts/escrow"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "cargo"
+
+  # Keep the dependabot config itself and any GitHub Actions up to date
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "github-actions"
