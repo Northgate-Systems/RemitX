@@ -1,12 +1,19 @@
 import { z } from "zod";
-import { isValidStellarPublicKey } from "@/lib/stellar-address";
+import { getPasswordStrength, MIN_PASSWORD_SCORE } from "@/lib/password-strength";
 
 export const registerSchema = z
   .object({
     firstName: z.string().trim().min(1, "First name is required").max(50),
     lastName: z.string().trim().min(1, "Last name is required").max(50),
     email: z.string().email("Invalid email address"),
-    password: z.string().min(8, "Password must be at least 8 characters"),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .max(128, "Password must be at most 128 characters")
+      .refine((pw) => getPasswordStrength(pw).score >= MIN_PASSWORD_SCORE, {
+        message:
+          "Password is too weak - mix in uppercase, lowercase, numbers, and symbols (at least 3 of those 5 checks must pass)",
+      }),
     confirmPassword: z.string().min(1, "Please confirm your password"),
     turnstileToken: z.string().min(1, "Please complete the verification challenge"),
   })
