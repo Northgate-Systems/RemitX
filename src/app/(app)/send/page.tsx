@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRightLeft, AtSign, ArrowRight, Info, RefreshCw } from "lucide-react";
+import { ArrowRightLeft, AtSign, ArrowRight, Info, RefreshCw, AlertCircle, CheckCircle2 } from "lucide-react";
+import { checkStellarPublicKey, STELLAR_PUBLIC_KEY_LENGTH } from "@/lib/stellar-address";
 
 const ASSETS = ["XLM", "USDC", "USD", "NGN", "PHP", "GBP"];
 const QUOTE_REFRESH_MS = 15_000;
@@ -13,6 +14,7 @@ export default function SendMoneyPage() {
   const [toAsset, setToAsset] = useState("NGN");
   const [amount, setAmount] = useState("100.00");
   const [recipient, setRecipient] = useState("");
+  const [recipientTouched, setRecipientTouched] = useState(false);
   const [rate, setRate] = useState<string | null>(null);
   const [rateLoading, setRateLoading] = useState(false);
   const [rateUpdatedAt, setRateUpdatedAt] = useState<Date | null>(null);
@@ -66,7 +68,18 @@ export default function SendMoneyPage() {
 
   const numericAmount = parseFloat(amount) || 0;
   const converted = rate ? numericAmount * parseFloat(rate) : 0;
-  const canContinue = numericAmount > 0 && recipient.trim().length > 0 && !!rate && !rateLoading;
+
+  // Checksum-validate the recipient as it's typed. Funds sent on Stellar are
+  // irreversible, so a typo has to be caught here rather than by Horizon.
+  const trimmedRecipient = recipient.trim();
+  const recipientCheck = checkStellarPublicKey(trimmedRecipient);
+  // Don't scold someone mid-paste: only surface the error once they've left
+  // the field or typed something already long enough to be a full address.
+  const showRecipientError =
+    !recipientCheck.valid &&
+    trimmedRecipient.length > 0 &&
+    (recipientTouched || trimmedRecipient.length >= STELLAR_PUBLIC_KEY_LENGTH);
+  const canContinue = numericAmount > 0 && recipientCheck.valid && !!rate && !rateLoading;
 
   const handleContinue = async () => {
     if (!canContinue) return;
@@ -167,17 +180,40 @@ export default function SendMoneyPage() {
                 <div className="space-y-3">
                   <h4 className="text-[10px] font-bold text-primary uppercase tracking-widest">Recipient Details</h4>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-gray-500 ml-1">Stellar Address</label>
+                    <label htmlFor="recipient-address" className="text-xs font-semibold text-gray-500 ml-1">Stellar Address</label>
                     <div className="relative">
                       <input
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary/20 transition-all pl-10 text-sm"
+                        id="recipient-address"
+                        className={`w-full px-4 py-2.5 rounded-xl border transition-all pl-10 pr-10 text-sm ${
+                          showRecipientError
+                            ? "border-red-300 focus:ring-2 focus:ring-red-200"
+                            : "border-gray-200 focus:ring-2 focus:ring-primary/20"
+                        }`}
                         placeholder="G..."
                         type="text"
+                        autoComplete="off"
+                        spellCheck={false}
                         value={recipient}
                         onChange={(e) => setRecipient(e.target.value)}
+                        onBlur={() => setRecipientTouched(true)}
+                        aria-invalid={showRecipientError}
+                        aria-describedby="recipient-address-status"
                       />
-                      <AtSign size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <AtSign size={16} className={`absolute left-3 top-1/2 -translate-y-1/2 ${showRecipientError ? "text-red-400" : "text-gray-400"}`} />
+                      {recipientCheck.valid && (
+                        <CheckCircle2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500" aria-hidden="true" />
+                      )}
                     </div>
+                    <p id="recipient-address-status" role="status" aria-live="polite" className="min-h-[1rem] ml-1">
+                      {showRecipientError ? (
+                        <span className="text-[11px] text-red-600 flex items-start gap-1 leading-relaxed">
+                          <AlertCircle size={12} className="shrink-0 mt-0.5" />
+                          {recipientCheck.message}
+                        </span>
+                      ) : recipientCheck.valid ? (
+                        <span className="text-[11px] text-emerald-600">Valid Stellar address.</span>
+                      ) : null}
+                    </p>
                   </div>
                 </div>
               </div>

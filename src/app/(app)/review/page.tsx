@@ -6,12 +6,14 @@ import Link from "next/link";
 import {
   ShieldCheck,
   AlertTriangle,
+  AlertCircle,
   Send,
   Link2,
   ChevronRight,
   Copy,
   Check,
 } from "lucide-react";
+import { checkStellarPublicKey } from "@/lib/stellar-address";
 
 interface StoredTx {
   transactionId: string;
@@ -38,8 +40,12 @@ function ReviewInner() {
   const [hash, setHash] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // Re-verify here too: the address arrives from sessionStorage, so a stale or
+  // tampered entry would otherwise be signed for without a second look.
+  const recipientCheck = checkStellarPublicKey(tx?.recipientAddress ?? "");
+
   const handleConfirm = async () => {
-    if (!tx || !secretKey.trim()) return;
+    if (!tx || !secretKey.trim() || !recipientCheck.valid) return;
     setStatus("submitting");
     setError(null);
     try {
@@ -151,9 +157,20 @@ function ReviewInner() {
               <h4 className="text-[10px] text-gray-400 font-bold uppercase mb-3">Recipient</h4>
               <div>
                 <label className="text-[10px] text-gray-400 font-bold block mb-1">Stellar Public Key</label>
-                <div className="bg-gray-50 rounded-lg px-3 py-2">
-                  <code className="text-[10px] text-gray-500 break-all">{tx.recipientAddress}</code>
+                <div className={`rounded-lg px-3 py-2 ${recipientCheck.valid ? "bg-gray-50" : "bg-red-50 border border-red-200"}`}>
+                  <code className={`text-[10px] break-all ${recipientCheck.valid ? "text-gray-500" : "text-red-700"}`}>{tx.recipientAddress}</code>
                 </div>
+                {recipientCheck.valid ? (
+                  <p className="text-[10px] text-emerald-600 mt-1.5 flex items-center gap-1">
+                    <ShieldCheck size={12} className="shrink-0" />
+                    Checksum verified.
+                  </p>
+                ) : (
+                  <p role="alert" className="text-[10px] text-red-600 mt-1.5 flex items-start gap-1 leading-relaxed">
+                    <AlertCircle size={12} className="shrink-0 mt-0.5" />
+                    {recipientCheck.message} <Link href="/send" className="font-semibold underline">Go back and fix it</Link>.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -175,7 +192,7 @@ function ReviewInner() {
                   </div>
                   <button
                     onClick={handleConfirm}
-                    disabled={!secretKey.trim() || status === "submitting"}
+                    disabled={!secretKey.trim() || status === "submitting" || !recipientCheck.valid}
                     className="w-full bg-secondary text-white text-sm font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 hover:bg-emerald-800 transition-all shadow-md disabled:opacity-50"
                   >
                     <Send size={16} />

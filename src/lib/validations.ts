@@ -32,7 +32,12 @@ export const stellarSendSchema = z.object({
   fromAsset: z.string().min(1, "Source asset is required").max(10),
   toAsset: z.string().min(1, "Destination asset is required").max(10),
   amount: z.string().regex(/^\d+(\.\d+)?$/, "Amount must be a positive number"),
-  recipientAddress: z.string().regex(/^G[A-Z2-7]{55}$/, "Invalid Stellar public key"),
+  // The regex alone accepts any 56-char G-string, so a single mistyped
+  // character sails through it; the checksum is what actually catches typos.
+  recipientAddress: z
+    .string()
+    .regex(/^G[A-Z2-7]{55}$/, "Invalid Stellar public key")
+    .refine(isValidStellarPublicKey, "Invalid Stellar public key (checksum failed)"),
 });
 
 export const stellarSubmitSchema = z.object({
