@@ -4,26 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Landmark, Eye, EyeOff, Check, X } from "lucide-react";
 import TurnstileWidget from "@/components/TurnstileWidget";
-
-// ── Password strength checker ────────────────────────────────────────────
-function getPasswordStrength(password: string): {
-  score: number;
-  label: string;
-  color: string;
-  checks: { label: string; passed: boolean }[];
-} {
-  const checks = [
-    { label: "8+ characters", passed: password.length >= 8 },
-    { label: "Uppercase letter", passed: /[A-Z]/.test(password) },
-    { label: "Lowercase letter", passed: /[a-z]/.test(password) },
-    { label: "Number", passed: /\d/.test(password) },
-    { label: "Special character", passed: /[^A-Za-z0-9]/.test(password) },
-  ];
-  const score = checks.filter((c) => c.passed).length;
-  const labels = ["Very weak", "Weak", "Fair", "Good", "Strong"];
-  const colors = ["bg-red-500", "bg-orange-500", "bg-yellow-500", "bg-lime-500", "bg-emerald-500"];
-  return { score, label: labels[score], color: colors[score], checks };
-}
+import { getPasswordStrength, MIN_PASSWORD_SCORE } from "@/lib/password-strength";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -60,7 +41,7 @@ export default function LoginPage() {
       setError("Passwords do not match");
       return;
     }
-    if (isRegister && strength.score < 3) {
+    if (isRegister && strength.score < MIN_PASSWORD_SCORE) {
       setError("Password is too weak. Please use a stronger password.");
       return;
     }
