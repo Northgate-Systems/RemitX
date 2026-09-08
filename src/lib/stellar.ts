@@ -10,7 +10,7 @@ import {
 import { getRate } from "@/lib/rates";
 
 const NETWORK = process.env.STELLAR_NETWORK || "testnet";
-const HORIZON_URL = process.env.STELLAR_HORIZON_URL || "https://horizon-testnet.stellar.org";
+export const HORIZON_URL = process.env.STELLAR_HORIZON_URL || "https://horizon-testnet.stellar.org";
 export const NETWORK_PASSPHRASE = NETWORK === "testnet" ? Networks.TESTNET : Networks.PUBLIC;
 
 export const server = new Horizon.Server(HORIZON_URL);
