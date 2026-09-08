@@ -24,7 +24,12 @@ export async function GET(
     .eq("id", id)
     .maybeSingle();
 
-  if (txError || !tx) return errorResponse("Transaction not found", 404);
+  if (txError) {
+    // A failed lookup query is a server problem, not "this id doesn't
+    // exist" - keep those two cases on different status codes.
+    return errorResponse("Failed to fetch transaction", 500);
+  }
+  if (!tx) return errorResponse("Transaction not found", 404);
 
   if ((tx as Transaction).userId !== user.id) {
     return errorResponse("Transaction not found", 404);

@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth";
-import { successResponse, unauthorizedResponse } from "@/lib/api-response";
+import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,8 +22,13 @@ export async function GET(request: NextRequest) {
       .range(offset, offset + limit - 1);
 
     if (error) {
+      // A failed query (DB down, bad connection, etc.) is a server-side
+      // problem, not an auth problem - returning 401 here used to tell
+      // clients "your session expired" when the real story was "the
+      // database call failed", which is a misleading signal to build any
+      // client-side logout/redirect behavior on top of.
       console.error("Transactions fetch error:", error);
-      return unauthorizedResponse();
+      return errorResponse("Failed to fetch transactions", 500);
     }
 
     return successResponse({
@@ -34,6 +39,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     console.error("Transactions fetch error:", err);
-    return unauthorizedResponse();
+    return errorResponse("Failed to fetch transactions", 500);
   }
 }

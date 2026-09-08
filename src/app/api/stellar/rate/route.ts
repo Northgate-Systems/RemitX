@@ -2,13 +2,13 @@ import { NextRequest } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { getRate } from "@/lib/rates";
 import { rateQuerySchema } from "@/lib/validations";
-import { successResponse, errorResponse } from "@/lib/api-response";
+import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
 
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return errorResponse("Unauthorized", 401);
+      return unauthorizedResponse();
     }
 
     const { searchParams } = new URL(request.url);

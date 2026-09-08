@@ -40,7 +40,12 @@ export async function POST(request: NextRequest) {
       .eq("id", transactionId)
       .maybeSingle();
 
-    if (txError || !tx) return errorResponse("Transaction not found", 404);
+    if (txError) {
+      // A failed lookup query is a server problem, not "this id doesn't
+      // exist" - keep those two cases on different status codes.
+      return errorResponse("Failed to fetch transaction", 500);
+    }
+    if (!tx) return errorResponse("Transaction not found", 404);
     const existing = tx as Transaction;
     if (existing.userId !== user.id) return unauthorizedResponse();
     if (existing.status !== "pending") {

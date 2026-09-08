@@ -103,6 +103,13 @@ export async function POST(request: NextRequest) {
     if (message.includes("Request body too large")) {
       return errorResponse("Request body too large", 413);
     }
+    if (message.includes("Insufficient balance")) {
+      // The user's account genuinely doesn't have the funds - that's a
+      // problem with the request given their current state, not a server
+      // fault, so it belongs on 400 next to the other "fix your input"
+      // errors rather than lumped in with real 500s.
+      return errorResponse(message, 400);
+    }
     return errorResponse(message || "Failed to build transaction", 500);
   }
 }
