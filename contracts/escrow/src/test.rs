@@ -280,3 +280,161 @@ fn test_refund_nonexistent_escrow() {
     let fake_id = BytesN::from_array(&env, &[0u8; 32]);
     h.escrow.refund(&fake_id);
 }
+
+// ----------------------------------------------------------------------------
+// Concurrent escrows for the same sender/recipient pair (issue #342)
+// ----------------------------------------------------------------------------
+
+#[test]
+fn test_identical_parameters_produce_distinct_escrow_ids() {
+    let env = Env::default();
+    let (h, id1) = setup(&env, 3600);
+
+    // Same sender, recipient, amount, asset AND expiry as the first escrow.
+    let expires_at = env.ledger().timestamp() + 3600;
+    let id2 = h.escrow.deposit(
+        &h.sender,
+        &h.recipient,
+        &1_000_000i128,
+        &h.token,
+        &expires_at,
+    );
+
+    assert_ne!(id1, id2, "identical parameters must not collide");
+    assert_eq!(h.escrow.get_escrow_count(), 2u32);
+
+    // Both escrows are stored independently and still Locked.
+    let s1 = h.escrow.get_escrow(&id1);
+    let s2 = h.escrow.get_escrow(&id2);
+    assert_eq!(s1.status, EscrowStatus::Locked);
+    assert_eq!(s2.status, EscrowStatus::Locked);
+    assert_eq!(s1.amount, 1_000_000i128);
+    assert_eq!(s2.amount, 1_000_000i128);
+
+    // Both deposits actually left the sender and sit in the contract.
+    let token_client = MockTokenClient::new(&env, &h.token);
+    assert_eq!(
+        token_client.balance(&h.sender),
+        10_000_000i128 - 2_000_000i128
+    );
+}
+
+#[test]
+fn test_concurrent_escrows_release_independently() {
+    let env = Env::default();
+    let (h, id1) = setup(&env, 3600);
+    let expires_at = env.ledger().timestamp() + 3600;
+    let id2 = h.escrow.deposit(
+        &h.sender,
+        &h.recipient,
+        &1_000_000i128,
+        &h.token,
+        &expires_at,
+    );
+
+    // Releasing the first escrow must not touch the second one.
+    h.escrow.release(&id1);
+    assert_eq!(h.escrow.get_escrow(&id1).status, EscrowStatus::Released);
+    assert_eq!(h.escrow.get_escrow(&id2).status, EscrowStatus::Locked);
+
+    let token_client = MockTokenClient::new(&env, &h.token);
+    assert_eq!(
+        token_client.balance(&h.recipient),
+        5_000_000i128 + 1_000_000i128
+    );
+
+    // The second escrow is still releasable on its own.
+    h.escrow.release(&id2);
+    assert_eq!(h.escrow.get_escrow(&id2).status, EscrowStatus::Released);
+    assert_eq!(
+        token_client.balance(&h.recipient),
+        5_000_000i128 + 2_000_000i128
+    );
+}
+
+#[test]
+fn test_concurrent_escrows_release_and_refund_independently() {
+    let env = Env::default();
+    let (h, id1) = setup(&env, 3600);
+    let expires_at = env.ledger().timestamp() + 3600;
+    let id2 = h.escrow.deposit(
+        &h.sender,
+        &h.recipient,
+        &1_000_000i128,
+        &h.token,
+        &expires_at,
+    );
+
+    // Release one before expiry, refund the other after expiry.
+    h.escrow.release(&id1);
+    env.ledger().set_timestamp(env.ledger().timestamp() + 7200);
+    h.escrow.refund(&id2);
+
+    assert_eq!(h.escrow.get_escrow(&id1).status, EscrowStatus::Released);
+    assert_eq!(h.escrow.get_escrow(&id2).status, EscrowStatus::Refunded);
+
+    let token_client = MockTokenClient::new(&env, &h.token);
+    // Recipient got escrow #1, sender got escrow #2 back.
+    assert_eq!(
+        token_client.balance(&h.recipient),
+        5_000_000i128 + 1_000_000i128
+    );
+    assert_eq!(
+        token_client.balance(&h.sender),
+        10_000_000i128 - 1_000_000i128
+    );
+}
+
+#[test]
+fn test_many_concurrent_identical_escrows_all_distinct() {
+    let env = Env::default();
+    let (h, first) = setup(&env, 3600);
+    let expires_at = env.ledger().timestamp() + 3600;
+
+    let mut ids = soroban_sdk::Vec::new(&env);
+    ids.push_back(first);
+    for _ in 0..4 {
+        ids.push_back(h.escrow.deposit(
+            &h.sender,
+            &h.recipient,
+            &1_000_000i128,
+            &h.token,
+            &expires_at,
+        ));
+    }
+
+    assert_eq!(h.escrow.get_escrow_count(), 5u32);
+    // Every ID is unique and resolves to its own Locked escrow.
+    for (i, id) in ids.iter().enumerate() {
+        assert_eq!(h.escrow.get_escrow(&id).status, EscrowStatus::Locked);
+        for (j, other) in ids.iter().enumerate() {
+            if i != j {
+                assert_ne!(id, other);
+            }
+        }
+    }
+}
+
+#[test]
+fn test_concurrent_escrows_with_different_assets_are_independent() {
+    let env = Env::default();
+    let (h, id1) = setup(&env, 3600);
+
+    // A second token contract, same escrow parameters otherwise.
+    let token2 = MockToken.register(&env, None, ());
+    let token2_client = MockTokenClient::new(&env, &token2);
+    token2_client.mint(&h.sender, &10_000_000i128);
+
+    let expires_at = env.ledger().timestamp() + 3600;
+    let id2 = h.escrow.deposit(
+        &h.sender,
+        &h.recipient,
+        &1_000_000i128,
+        &token2,
+        &expires_at,
+    );
+
+    assert_ne!(id1, id2);
+    assert_eq!(h.escrow.get_escrow(&id1).asset, h.token);
+    assert_eq!(h.escrow.get_escrow(&id2).asset, token2);
+}
