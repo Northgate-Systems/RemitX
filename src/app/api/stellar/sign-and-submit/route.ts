@@ -4,7 +4,14 @@ import { supabase } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth";
 import { submitTransaction, NETWORK_PASSPHRASE } from "@/lib/stellar";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
+import { rateLimit, logSecurityEvent } from "@/lib/security";
 import type { Transaction } from "@/lib/types";
+
+// Tighter than /api/stellar/submit: this endpoint accepts a raw secret key
+// and signs server-side, so an attacker who got hold of a session cookie
+// should not be able to spray signing attempts at it.
+const SIGN_SUBMIT_LIMIT = 10;
+const SIGN_SUBMIT_WINDOW_MS = 60_000;
 
 // ---------------------------------------------------------------------------
 // Testnet-only convenience endpoint: signs server-side with a secret key
@@ -21,6 +28,14 @@ export async function POST(request: NextRequest) {
     const user = await getCurrentUser();
     if (!user) {
       return unauthorizedResponse();
+    }
+
+    const rl = rateLimit(`sign-and-submit:${user.id}`, SIGN_SUBMIT_LIMIT, SIGN_SUBMIT_WINDOW_MS);
+    if (!rl.allowed) {
+      logSecurityEvent("rate_limited", { userId: user.id, endpoint: "stellar/sign-and-submit" });
+      return errorResponse("Too many signing requests. Please try again later.", 429, {
+        "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)),
+      });
     }
 
     const body = await request.json();
