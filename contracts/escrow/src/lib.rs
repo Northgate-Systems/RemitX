@@ -63,8 +63,16 @@ impl EscrowContract {
     /// Lock funds in escrow.
     ///
     /// Transfers `amount` of `asset` from `sender` to this contract and
-    /// stores an EscrowState. Returns the escrow ID (a hash of the
-    /// parameters).
+    /// stores an EscrowState. Returns the escrow ID.
+    ///
+    /// The escrow ID is `sha256(sender || recipient || asset || amount ||
+    /// expires_at || nonce)`, where `nonce` is the current escrow counter.
+    /// The nonce is what makes the ID unique: without it, two escrows that
+    /// share the same sender/recipient/amount/expiry hash to the same ID and
+    /// the second `deposit()` silently overwrites the first one's state,
+    /// stranding the first deposit's tokens in the contract. Including the
+    /// monotonically increasing counter lets the same sender/recipient pair
+    /// hold any number of concurrent escrows.
     ///
     /// Validates that `amount > 0` and `expires_at` is in the future.
     pub fn deposit(
@@ -87,17 +95,41 @@ impl EscrowContract {
             panic!("expires_at must be in the future");
         }
 
-        // Transfer tokens from sender to this contract
-        let token_client = token::Client::new(&env, &asset);
-        token_client.transfer(&sender, &env.current_contract_address(), &amount);
+        // Read the escrow counter *before* deriving the ID: it doubles as a
+        // per-contract nonce, so identical parameters never collide.
+        let count: u32 = env
+            .storage()
+            .instance()
+            .get(&EscrowDataKey::EscrowCount)
+            .unwrap_or(0);
 
-        // Generate a deterministic escrow_id from the parameters
+        // Generate a deterministic escrow_id from the parameters + nonce
         let mut hash_input = soroban_sdk::Bytes::new(&env);
         hash_input.append(&sender.clone().to_xdr(&env));
         hash_input.append(&recipient.clone().to_xdr(&env));
+        hash_input.append(&asset.clone().to_xdr(&env));
         hash_input.append(&soroban_sdk::Bytes::from_array(&env, &amount.to_be_bytes()));
-        hash_input.append(&soroban_sdk::Bytes::from_array(&env, &expires_at.to_be_bytes()));
+        hash_input.append(&soroban_sdk::Bytes::from_array(
+            &env,
+            &expires_at.to_be_bytes(),
+        ));
+        hash_input.append(&soroban_sdk::Bytes::from_array(&env, &count.to_be_bytes()));
         let escrow_id: BytesN<32> = env.crypto().sha256(&hash_input).into();
+
+        // Defence in depth: never overwrite a live escrow. Unreachable while
+        // the nonce is part of the hash, but a future change to the ID
+        // derivation must fail loudly instead of silently stranding funds.
+        if env
+            .storage()
+            .instance()
+            .has(&EscrowDataKey::Escrow(escrow_id.clone()))
+        {
+            panic!("escrow id already exists");
+        }
+
+        // Transfer tokens from sender to this contract
+        let token_client = token::Client::new(&env, &asset);
+        token_client.transfer(&sender, &env.current_contract_address(), &amount);
 
         let state = EscrowState {
             sender,
@@ -107,14 +139,11 @@ impl EscrowContract {
             status: EscrowStatus::Locked,
             expires_at,
         };
-        env.storage().instance().set(&EscrowDataKey::Escrow(escrow_id.clone()), &state);
-
-        // Increment and persist the escrow count
-        let count: u32 = env
-            .storage()
+        env.storage()
             .instance()
-            .get(&EscrowDataKey::EscrowCount)
-            .unwrap_or(0);
+            .set(&EscrowDataKey::Escrow(escrow_id.clone()), &state);
+
+        // Persist the incremented escrow count (also bumps the next nonce)
         env.storage()
             .instance()
             .set(&EscrowDataKey::EscrowCount, &(count + 1));

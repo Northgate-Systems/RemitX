@@ -15,6 +15,26 @@ When a user sends money via RemitX, the funds can optionally be locked in this e
 | `refund(escrow_id)` | Stub | Refunds funds to sender after expiry |
 | `get_escrow(escrow_id) -> EscrowState` | **Implemented** | Read-only state getter |
 
+## Escrow IDs
+
+`deposit()` returns an escrow ID derived as:
+
+```
+sha256(sender || recipient || asset || amount || expires_at || nonce)
+```
+
+where `nonce` is the value of the `EscrowCount` counter at the moment of the
+deposit. The nonce is what guarantees uniqueness: the same sender/recipient
+pair can hold any number of concurrent escrows, even with identical amounts,
+assets and expiry times, and each one gets its own ID and its own stored
+`EscrowState`.
+
+Without the nonce, two such deposits hash to the same ID, the second one
+overwrites the first one's state and the first deposit's tokens stay locked in
+the contract with no way to release or refund them. `deposit()` additionally
+refuses to write over an existing escrow ID, so any future change to the ID
+derivation fails loudly instead of silently stranding funds.
+
 ## What's Implemented vs. Stubbed
 
 - **`get_escrow()`** - Fully implemented. Reads from contract storage.
