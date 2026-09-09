@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
-import { rateLimit, logSecurityEvent } from "@/lib/security";
+import { NextRequest, NextResponse } from "next/server";
+import { rateLimit, logSecurityEvent, readBodyWithLimit, isBodyTooLargeError } from "@/lib/security";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
     const rl = rateLimit(`analytics:${ip}`, 60, 60_000);
@@ -10,7 +10,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false }, { status: 429 });
     }
 
-    const body = await request.json();
+    const body = (await readBodyWithLimit(request)) as Record<string, unknown>;
     const { url, referrer, ts } = body;
 
     // In production, this would write to a database or analytics service.
@@ -27,7 +27,10 @@ export async function POST(request: Request) {
     );
 
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (err) {
+    if (isBodyTooLargeError(err)) {
+      return NextResponse.json({ success: false }, { status: 413 });
+    }
     return NextResponse.json({ success: false }, { status: 400 });
   }
 }

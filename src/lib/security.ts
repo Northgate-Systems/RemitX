@@ -112,6 +112,13 @@ export async function readBodyWithLimit(request: NextRequest, maxBytes = MAX_REQ
   return JSON.parse(text);
 }
 
+// Shared check so every route using readBodyWithLimit() can map its
+// "too large" error to a 413 the same way, instead of falling through
+// to a generic 500 (or each route re-implementing its own string match).
+export function isBodyTooLargeError(err: unknown): boolean {
+  return err instanceof Error && err.message === "Request body too large";
+}
+
 // ── Security event logging ──────────────────────────────────────────────
 export type SecurityEventType =
   | "login_success"

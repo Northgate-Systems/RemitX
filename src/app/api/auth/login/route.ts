@@ -13,6 +13,7 @@ import {
   sanitizeEmail,
   logSecurityEvent,
   readBodyWithLimit,
+  isBodyTooLargeError,
 } from "@/lib/security";
 
 export async function POST(request: NextRequest) {
@@ -88,6 +89,9 @@ export async function POST(request: NextRequest) {
 
     return successResponse({ user: safeUser });
   } catch (err) {
+    if (isBodyTooLargeError(err)) {
+      return errorResponse("Request body too large", 413);
+    }
     console.error("Login error:", err);
     const message = err instanceof Error ? err.message : "";
     if (message.includes("SUPABASE_SERVICE_ROLE_KEY") || message.includes("NEXT_PUBLIC_SUPABASE_URL")) {

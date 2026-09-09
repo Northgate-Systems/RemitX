@@ -1,7 +1,14 @@
 import { NextRequest } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { successResponse, errorResponse } from "@/lib/api-response";
-import { generateResetToken, rateLimit, sanitizeEmail, logSecurityEvent } from "@/lib/security";
+import {
+  generateResetToken,
+  rateLimit,
+  sanitizeEmail,
+  logSecurityEvent,
+  readBodyWithLimit,
+  isBodyTooLargeError,
+} from "@/lib/security";
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,8 +19,8 @@ export async function POST(request: NextRequest) {
       return errorResponse("Too many requests. Please try again later.", 429);
     }
 
-    const body = await request.json();
-    const email = sanitizeEmail(body.email || "");
+    const body = (await readBodyWithLimit(request)) as Record<string, unknown>;
+    const email = sanitizeEmail((body.email as string) || "");
 
     if (!email || !email.includes("@")) {
       return errorResponse("Invalid email address", 400);
@@ -42,6 +49,9 @@ export async function POST(request: NextRequest) {
       message: "If an account exists with that email, a reset link has been sent.",
     });
   } catch (err) {
+    if (isBodyTooLargeError(err)) {
+      return errorResponse("Request body too large", 413);
+    }
     console.error("Forgot password error:", err);
     return errorResponse("Internal server error", 500);
   }
