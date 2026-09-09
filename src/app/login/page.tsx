@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Landmark, Eye, EyeOff, Check, X } from "lucide-react";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import { getPasswordStrength, MIN_PASSWORD_SCORE } from "@/lib/password-strength";
 
-export default function LoginPage() {
+function LoginPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isRegister, setIsRegister] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -17,8 +18,25 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
-  const [error, setError] = useState("");
+  // middleware.ts redirects here with ?expired=1 when a protected page was
+  // requested with a missing/invalid session cookie - surface that as a
+  // friendly message instead of leaving the visitor to wonder why they
+  // suddenly landed on a blank login form. Read it once as the initial
+  // state (not via a setState-in-effect) and strip the query param below
+  // so a page refresh doesn't keep re-showing it.
+  const [error, setError] = useState(() =>
+    searchParams.get("expired") === "1"
+      ? "Your session expired. Please log in again."
+      : ""
+  );
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("expired") === "1") {
+      router.replace("/login");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const strength = getPasswordStrength(password);
   const passwordsMatch = password === confirmPassword;
@@ -265,5 +283,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageInner />
+    </Suspense>
   );
 }

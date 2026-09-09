@@ -29,8 +29,18 @@ export function middleware(request: NextRequest) {
   // Apply security headers to all responses
   applySecurityHeaders(response);
 
-  // Allow public paths before any auth/CORS checks
-  if (publicPaths.some((p) => pathname.startsWith(p))) {
+  // Allow public paths before any auth/CORS checks.
+  // "/" is only meant to mean "the home page itself" - matched with
+  // pathname.startsWith(p) it's a prefix of every possible pathname, so it
+  // used to make this whole allow-list swallow every route (dashboard,
+  // /api/transactions, everything) and skip auth entirely. It needs an
+  // exact-match check; the other entries are genuine directory/route
+  // prefixes ("/legal/", "/api/public/", "/_next/", ...) and keep prefix
+  // matching.
+  if (
+    pathname === "/" ||
+    publicPaths.some((p) => p !== "/" && pathname.startsWith(p))
+  ) {
     return response;
   }
 
@@ -62,7 +72,12 @@ export function middleware(request: NextRequest) {
         { status: 401 }
       );
     }
-    return NextResponse.redirect(new URL("/login", request.url));
+    // A missing cookie on a page that isn't in publicPaths means either the
+    // user never logged in or their session just expired mid-visit - the
+    // ?expired=1 flag lets the login page tell those apart from a fresh,
+    // deliberate visit and show a "your session expired" message instead
+    // of silently landing on an unexplained login form.
+    return NextResponse.redirect(new URL("/login?expired=1", request.url));
   }
 
   const payload = verifyToken(token);
@@ -74,7 +89,7 @@ export function middleware(request: NextRequest) {
         { status: 401 }
       );
     }
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(new URL("/login?expired=1", request.url));
   }
 
   return response;
