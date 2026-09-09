@@ -23,10 +23,28 @@
 
 #![no_std]
 use soroban_sdk::{
-    contract, contractimpl, contractmeta, token, xdr::ToXdr, Address, BytesN, Env, Symbol,
+    contract, contracterror, contractimpl, contractmeta, token, xdr::ToXdr, Address, BytesN, Env,
+    Symbol,
 };
 
 contractmeta!(key = "RemitX Escrow", val = "0.1.0");
+
+/// Typed, documented error codes returned by this contract.
+///
+/// Scope note: this only covers the "escrow not found" case flagged in
+/// issue #332 (`get_escrow`/`release`/`refund` previously used
+/// `.expect("Escrow not found")`, which panics with an untyped message).
+/// The other `panic!()` calls in this module (bad amount, wrong status,
+/// not-yet-expired, ...) are a separate, broader scope tracked by #333
+/// ("Define a contracterror enum for all escrow failure modes") and are
+/// intentionally left as-is here to avoid scope creep.
+#[contracterror]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[repr(u32)]
+pub enum Error {
+    /// No escrow exists for the given `escrow_id`.
+    EscrowNotFound = 1,
+}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[soroban_sdk::contracttype]
@@ -135,12 +153,16 @@ impl EscrowContract {
     /// contracts/escrow/README.md for context.
     ///
     /// Asserts the escrow is `Locked` and not expired before releasing.
-    pub fn release(env: Env, escrow_id: BytesN<32>) {
+    ///
+    /// Returns `Error::EscrowNotFound` if no escrow exists for `escrow_id`.
+    /// Other invalid states (wrong status, expired) still panic - see the
+    /// scope note on `Error`.
+    pub fn release(env: Env, escrow_id: BytesN<32>) -> Result<(), Error> {
         let state: EscrowState = env
             .storage()
             .instance()
             .get(&EscrowDataKey::Escrow(escrow_id.clone()))
-            .expect("Escrow not found");
+            .ok_or(Error::EscrowNotFound)?;
 
         // Assert the escrow is Locked
         if state.status != EscrowStatus::Locked {
@@ -169,17 +191,23 @@ impl EscrowContract {
             (Symbol::new(&env, "released"), escrow_id),
             (updated.recipient, updated.amount),
         );
+
+        Ok(())
     }
 
     /// Refund escrowed funds to the sender if the escrow has expired.
     ///
     /// Asserts the escrow is `Locked` and has expired before refunding.
-    pub fn refund(env: Env, escrow_id: BytesN<32>) {
+    ///
+    /// Returns `Error::EscrowNotFound` if no escrow exists for `escrow_id`.
+    /// Other invalid states (wrong status, not yet expired) still panic -
+    /// see the scope note on `Error`.
+    pub fn refund(env: Env, escrow_id: BytesN<32>) -> Result<(), Error> {
         let state: EscrowState = env
             .storage()
             .instance()
             .get(&EscrowDataKey::Escrow(escrow_id.clone()))
-            .expect("Escrow not found");
+            .ok_or(Error::EscrowNotFound)?;
 
         // Assert the escrow is Locked
         if state.status != EscrowStatus::Locked {
@@ -208,16 +236,19 @@ impl EscrowContract {
             (Symbol::new(&env, "refunded"), escrow_id),
             (updated.sender, updated.amount),
         );
+
+        Ok(())
     }
 
     /// Read-only getter for escrow state.
     ///
-    /// This is fully implemented since it's a simple storage read.
-    pub fn get_escrow(env: Env, escrow_id: BytesN<32>) -> EscrowState {
+    /// Returns `Error::EscrowNotFound` if no escrow exists for `escrow_id`,
+    /// instead of panicking with an untyped message.
+    pub fn get_escrow(env: Env, escrow_id: BytesN<32>) -> Result<EscrowState, Error> {
         env.storage()
             .instance()
             .get(&EscrowDataKey::Escrow(escrow_id))
-            .expect("Escrow not found")
+            .ok_or(Error::EscrowNotFound)
     }
 
     /// Read-only getter for the total number of escrows created.
