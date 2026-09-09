@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { verifyToken } from "@/lib/jwt";
+import { verifyToken, SESSION_COOKIE } from "@/lib/jwt";
 import { applySecurityHeaders, logSecurityEvent } from "@/lib/security-edge";
 
 const publicPaths = [
@@ -52,7 +52,7 @@ export function middleware(request: NextRequest) {
   }
 
   // Check for session cookie
-  const token = request.cookies.get("remitx_session")?.value;
+  const token = request.cookies.get(SESSION_COOKIE)?.value;
   if (!token) {
     // Redirect to login for page routes, return 401 for API routes
     if (pathname.startsWith("/api/")) {
