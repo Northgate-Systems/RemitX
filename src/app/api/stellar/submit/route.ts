@@ -4,13 +4,28 @@ import { getCurrentUser } from "@/lib/auth";
 import { submitTransaction } from "@/lib/stellar";
 import { stellarSubmitSchema } from "@/lib/validations";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
+import { rateLimit, logSecurityEvent } from "@/lib/security";
 import type { Transaction } from "@/lib/types";
+
+// Submitting is cheap for the caller but expensive for us (a Horizon
+// round-trip plus two DB writes each time), so it gets the same per-user
+// budget as /api/stellar/send.
+const SUBMIT_LIMIT = 20;
+const SUBMIT_WINDOW_MS = 60_000;
 
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
       return unauthorizedResponse();
+    }
+
+    const rl = rateLimit(`submit:${user.id}`, SUBMIT_LIMIT, SUBMIT_WINDOW_MS);
+    if (!rl.allowed) {
+      logSecurityEvent("rate_limited", { userId: user.id, endpoint: "stellar/submit" });
+      return errorResponse("Too many submit requests. Please try again later.", 429, {
+        "Retry-After": String(Math.ceil(rl.retryAfterMs / 1000)),
+      });
     }
 
     const body = await request.json();
