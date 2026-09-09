@@ -264,19 +264,44 @@ fn test_double_refund_prevented() {
 }
 
 #[test]
-#[should_panic(expected = "Escrow not found")]
-fn test_release_nonexistent_escrow() {
+fn test_release_nonexistent_escrow_returns_typed_error() {
     let env = Env::default();
     let (h, _) = setup(&env, 3600);
     let fake_id = BytesN::from_array(&env, &[0u8; 32]);
-    h.escrow.release(&fake_id);
+    let result = h.escrow.try_release(&fake_id);
+    assert_eq!(result, Err(Ok(Error::EscrowNotFound)));
 }
 
 #[test]
-#[should_panic(expected = "Escrow not found")]
-fn test_refund_nonexistent_escrow() {
+fn test_refund_nonexistent_escrow_returns_typed_error() {
     let env = Env::default();
     let (h, _) = setup(&env, 3600);
     let fake_id = BytesN::from_array(&env, &[0u8; 32]);
-    h.escrow.refund(&fake_id);
+    let result = h.escrow.try_refund(&fake_id);
+    assert_eq!(result, Err(Ok(Error::EscrowNotFound)));
+}
+
+#[test]
+fn test_get_escrow_nonexistent_returns_typed_error() {
+    // EscrowState intentionally doesn't derive PartialEq (out of scope for
+    // this fix), so match the error shape directly instead of assert_eq!.
+    let env = Env::default();
+    let (h, _) = setup(&env, 3600);
+    let fake_id = BytesN::from_array(&env, &[0u8; 32]);
+    let result = h.escrow.try_get_escrow(&fake_id);
+    match result {
+        Err(Ok(Error::EscrowNotFound)) => {}
+        other => panic!("expected Err(Ok(EscrowNotFound)), got {:?}", other),
+    }
+}
+
+#[test]
+fn test_get_escrow_found_still_returns_state_directly() {
+    // Non-try client methods should keep working unchanged for the
+    // success path (panic-on-error is only observable when the escrow
+    // is actually missing, covered above).
+    let env = Env::default();
+    let (h, id) = setup(&env, 3600);
+    let state = h.escrow.get_escrow(&id);
+    assert_eq!(state.status, EscrowStatus::Locked);
 }

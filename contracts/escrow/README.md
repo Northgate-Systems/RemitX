@@ -11,9 +11,15 @@ When a user sends money via RemitX, the funds can optionally be locked in this e
 | Function | Status | Description |
 |----------|--------|-------------|
 | `deposit(sender, recipient, amount, asset, expires_at) -> BytesN<32>` | Stub | Locks funds in escrow, returns escrow ID |
-| `release(escrow_id)` | Stub | Releases funds to recipient |
-| `refund(escrow_id)` | Stub | Refunds funds to sender after expiry |
-| `get_escrow(escrow_id) -> EscrowState` | **Implemented** | Read-only state getter |
+| `release(escrow_id) -> Result<(), Error>` | Stub | Releases funds to recipient |
+| `refund(escrow_id) -> Result<(), Error>` | Stub | Refunds funds to sender after expiry |
+| `get_escrow(escrow_id) -> Result<EscrowState, Error>` | **Implemented** | Read-only state getter |
+
+`release()`, `refund()`, and `get_escrow()` return `Error::EscrowNotFound`
+(via `soroban_sdk::contracterror`) instead of panicking with an untyped
+message when `escrow_id` doesn't exist. Other invalid states (wrong status,
+not-yet-expired/already-expired) still `panic!()` - covering those with
+typed errors too is tracked separately in #333.
 
 ## What's Implemented vs. Stubbed
 
