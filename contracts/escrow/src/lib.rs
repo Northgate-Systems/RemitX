@@ -77,6 +77,15 @@ impl EscrowContract {
     ) -> BytesN<32> {
         sender.require_auth();
 
+        // Reject self-escrows: a sender escrowing funds to themselves has no
+        // legitimate use in a remittance flow (the same party would be both
+        // the one who can be refunded on expiry and the one release() would
+        // eventually pay out to), and it needlessly ties up funds behind the
+        // still-undecided release() authorization mechanism for zero benefit.
+        if sender == recipient {
+            panic!("sender and recipient must be different addresses");
+        }
+
         // Validate amount is positive
         if amount <= 0 {
             panic!("amount must be greater than zero");
