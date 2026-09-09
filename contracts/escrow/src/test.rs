@@ -151,6 +151,16 @@ fn test_deposit_increments_escrow_count() {
 }
 
 #[test]
+#[should_panic(expected = "sender and recipient must be different addresses")]
+fn test_deposit_rejects_self_escrow() {
+    let env = Env::default();
+    let (h, _) = setup(&env, 3600);
+    let expires_at = env.ledger().timestamp() + 3600;
+    h.escrow
+        .deposit(&h.sender, &h.sender, &1_000_000i128, &h.token, &expires_at);
+}
+
+#[test]
 #[should_panic(expected = "amount must be greater than zero")]
 fn test_deposit_rejects_zero_amount() {
     let env = Env::default();

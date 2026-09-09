@@ -15,6 +15,11 @@ When a user sends money via RemitX, the funds can optionally be locked in this e
 | `refund(escrow_id)` | Stub | Refunds funds to sender after expiry |
 | `get_escrow(escrow_id) -> EscrowState` | **Implemented** | Read-only state getter |
 
+`deposit()` rejects `sender == recipient` (self-escrows) with a panic - a
+sender escrowing funds to themselves has no legitimate use in a remittance
+flow and would just tie up funds behind the still-undecided `release()`
+authorization mechanism for no benefit.
+
 ## What's Implemented vs. Stubbed
 
 - **`get_escrow()`** - Fully implemented. Reads from contract storage.
