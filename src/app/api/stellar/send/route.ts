@@ -10,6 +10,7 @@ import {
   detectPromptInjection,
   logSecurityEvent,
   readBodyWithLimit,
+  isBodyTooLargeError,
 } from "@/lib/security";
 
 export async function POST(request: NextRequest) {
@@ -100,7 +101,7 @@ export async function POST(request: NextRequest) {
     if (message.includes("Invalid recipient")) {
       return errorResponse(message, 400);
     }
-    if (message.includes("Request body too large")) {
+    if (isBodyTooLargeError(err)) {
       return errorResponse("Request body too large", 413);
     }
     return errorResponse(message || "Failed to build transaction", 500);

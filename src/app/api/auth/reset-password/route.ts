@@ -7,6 +7,7 @@ import {
   rateLimit,
   logSecurityEvent,
   readBodyWithLimit,
+  isBodyTooLargeError,
 } from "@/lib/security";
 
 export async function POST(request: NextRequest) {
@@ -59,6 +60,9 @@ export async function POST(request: NextRequest) {
       message: "Password reset successfully. Please sign in with your new password.",
     });
   } catch (err) {
+    if (isBodyTooLargeError(err)) {
+      return errorResponse("Request body too large", 413);
+    }
     console.error("Reset password error:", err);
     return errorResponse("Internal server error", 500);
   }

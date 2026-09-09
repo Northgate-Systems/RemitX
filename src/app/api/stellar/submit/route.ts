@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { submitTransaction } from "@/lib/stellar";
 import { stellarSubmitSchema } from "@/lib/validations";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
+import { readBodyWithLimit, isBodyTooLargeError } from "@/lib/security";
 import type { Transaction } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest) {
       return unauthorizedResponse();
     }
 
-    const body = await request.json();
+    const body = (await readBodyWithLimit(request)) as Record<string, unknown>;
     const parsed = stellarSubmitSchema.safeParse(body);
 
     if (!parsed.success) {
@@ -76,6 +77,9 @@ export async function POST(request: NextRequest) {
       toAmount: finalTx.toAmount,
     });
   } catch (err: unknown) {
+    if (isBodyTooLargeError(err)) {
+      return errorResponse("Request body too large", 413);
+    }
     console.error("Submit error:", err);
     const message = err instanceof Error ? err.message : "Unknown error";
     return errorResponse(message, 500);

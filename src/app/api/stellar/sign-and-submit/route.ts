@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth";
 import { submitTransaction, NETWORK_PASSPHRASE } from "@/lib/stellar";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
+import { readBodyWithLimit, isBodyTooLargeError } from "@/lib/security";
 import type { Transaction } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
       return unauthorizedResponse();
     }
 
-    const body = await request.json();
+    const body = await readBodyWithLimit(request);
     const { transactionId, xdr, secretKey } = body as {
       transactionId?: string;
       xdr?: string;
@@ -91,6 +92,9 @@ export async function POST(request: NextRequest) {
       resultCode: result.resultCode,
     });
   } catch (err: unknown) {
+    if (isBodyTooLargeError(err)) {
+      return errorResponse("Request body too large", 413);
+    }
     console.error("Sign-and-submit error:", err);
     const message = err instanceof Error ? err.message : "Unknown error";
     return errorResponse(message, 500);
