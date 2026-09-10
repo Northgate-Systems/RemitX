@@ -5,7 +5,7 @@ import { buildSendTransaction, fetchRate } from "@/lib/stellar";
 import { stellarSendSchema } from "@/lib/validations";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
 import {
-  rateLimit,
+  enforceRateLimit,
   sanitizeInput,
   detectPromptInjection,
   logSecurityEvent,
@@ -24,11 +24,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Rate limit per user
-    const rl = rateLimit(`send:${user.id}`, 20, 60_000);
-    if (!rl.allowed) {
-      logSecurityEvent("rate_limited", { userId: user.id, endpoint: "stellar/send" });
-      return errorResponse("Too many send requests. Please try again later.", 429);
-    }
+    const limited = enforceRateLimit(request, "stellar-send", user.id);
+    if (limited) return limited;
 
     const body = (await readBodyWithLimit(request)) as Record<string, unknown>;
     const parsed = stellarSendSchema.safeParse(body);

@@ -1,16 +1,12 @@
 import { NextRequest } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { successResponse, errorResponse } from "@/lib/api-response";
-import { generateResetToken, rateLimit, sanitizeEmail, logSecurityEvent } from "@/lib/security";
+import { generateResetToken, enforceRateLimit, sanitizeEmail, logSecurityEvent } from "@/lib/security";
 
 export async function POST(request: NextRequest) {
   try {
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    const rl = rateLimit(`forgot-password:${ip}`, 3, 60_000);
-    if (!rl.allowed) {
-      logSecurityEvent("rate_limited", { ip, endpoint: "forgot-password" });
-      return errorResponse("Too many requests. Please try again later.", 429);
-    }
+    const limited = enforceRateLimit(request, "forgot-password");
+    if (limited) return limited;
 
     const body = await request.json();
     const email = sanitizeEmail(body.email || "");
