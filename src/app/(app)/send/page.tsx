@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRightLeft, AtSign, ArrowRight, Info, RefreshCw, AlertCircle, CheckCircle2 } from "lucide-react";
 import { checkStellarPublicKey, STELLAR_PUBLIC_KEY_LENGTH } from "@/lib/stellar-address";
+import { toMinorUnits, fromMinorUnits, convertMinorUnits, sanitizeAmountInput } from "@/lib/currency";
 
 const ASSETS = ["XLM", "USDC", "USD", "NGN", "PHP", "GBP"];
 const QUOTE_REFRESH_MS = 15_000;
@@ -66,8 +67,13 @@ export default function SendMoneyPage() {
     return () => clearInterval(interval);
   }, [fetchQuote]);
 
-  const numericAmount = parseFloat(amount) || 0;
-  const converted = rate ? numericAmount * parseFloat(rate) : 0;
+  // Kept as an exact integer count of minor units (cents) rather than a
+  // float - see src/lib/currency.ts for why parseFloat(amount) here would
+  // reintroduce the precision bug this replaced.
+  const amountMinor = toMinorUnits(amount);
+  const convertedMinor =
+    amountMinor !== null && rate ? convertMinorUnits(amountMinor, parseFloat(rate)) : 0;
+  const convertedDisplay = fromMinorUnits(convertedMinor);
 
   // Checksum-validate the recipient as it's typed. Funds sent on Stellar are
   // irreversible, so a typo has to be caught here rather than by Horizon.
@@ -79,7 +85,8 @@ export default function SendMoneyPage() {
     !recipientCheck.valid &&
     trimmedRecipient.length > 0 &&
     (recipientTouched || trimmedRecipient.length >= STELLAR_PUBLIC_KEY_LENGTH);
-  const canContinue = numericAmount > 0 && recipientCheck.valid && !!rate && !rateLoading;
+  const canContinue =
+    amountMinor !== null && amountMinor > 0 && recipientCheck.valid && !!rate && !rateLoading;
 
   const handleContinue = async () => {
     if (!canContinue) return;
@@ -141,13 +148,21 @@ export default function SendMoneyPage() {
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-gray-500 ml-1">You Send</label>
                   <div className="flex items-stretch border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-primary/20 transition-all shadow-sm">
+                    {/* A money field, not a spinner: type="number" hands back
+                        whatever the browser considers a valid float, including
+                        scientific notation ("1e5"), so the raw value can
+                        disagree with what the user thinks they typed. text +
+                        inputMode="decimal" still brings up a numeric keypad on
+                        mobile, but the value is exactly the characters typed,
+                        which sanitizeAmountInput can then constrain. */}
                     <input
                       className="flex-1 px-4 py-3.5 border-none text-lg font-bold focus:ring-0 outline-none"
                       placeholder="0.00"
-                      type="number"
-                      min="0"
+                      type="text"
+                      inputMode="decimal"
+                      aria-label="Amount to send"
                       value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
+                      onChange={(e) => setAmount(sanitizeAmountInput(e.target.value))}
                     />
                     <select
                       value={fromAsset}
@@ -165,7 +180,7 @@ export default function SendMoneyPage() {
                       className="flex-1 px-4 py-3.5 border-none text-lg font-bold bg-gray-50 focus:ring-0 text-gray-500 outline-none"
                       readOnly
                       type="text"
-                      value={rateLoading ? "…" : converted.toFixed(2)}
+                      value={rateLoading ? "…" : convertedDisplay}
                     />
                     <select
                       value={toAsset}
@@ -246,7 +261,7 @@ export default function SendMoneyPage() {
                   <div className="flex flex-col items-center py-1">
                     <span className="text-[10px] opacity-70 uppercase tracking-widest mb-1">Recipient Receives</span>
                     <div className="flex items-baseline gap-1.5">
-                      <span className="text-2xl lg:text-3xl font-bold">{rateLoading ? "…" : converted.toFixed(2)}</span>
+                      <span className="text-2xl lg:text-3xl font-bold">{rateLoading ? "…" : convertedDisplay}</span>
                       <span className="text-sm">{toAsset}</span>
                     </div>
                   </div>
