@@ -2,6 +2,10 @@ import { describe, it, expect } from "vitest";
 import {
   registerSchema,
   loginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  signAndSubmitSchema,
+  analyticsSchema,
   stellarSendSchema,
   stellarSubmitSchema,
   rateQuerySchema,
@@ -97,6 +101,102 @@ describe("loginSchema", () => {
       loginSchema.safeParse({ email: "bohdan@example.com", password: "x", turnstileToken: "" })
         .success
     ).toBe(false);
+  });
+});
+
+describe("forgotPasswordSchema", () => {
+  it("accepts a well-formed email", () => {
+    expect(forgotPasswordSchema.safeParse({ email: "bohdan@example.com" }).success).toBe(true);
+  });
+
+  it("rejects an invalid email", () => {
+    expect(forgotPasswordSchema.safeParse({ email: "not-an-email" }).success).toBe(false);
+  });
+
+  it("rejects a missing email", () => {
+    expect(forgotPasswordSchema.safeParse({}).success).toBe(false);
+  });
+});
+
+describe("resetPasswordSchema", () => {
+  const VALID_RESET = { token: "reset-token-abc", newPassword: "supersecret1" };
+
+  it("accepts a well-formed reset request", () => {
+    expect(resetPasswordSchema.safeParse(VALID_RESET).success).toBe(true);
+  });
+
+  it("rejects a missing token", () => {
+    expect(resetPasswordSchema.safeParse({ ...VALID_RESET, token: "" }).success).toBe(false);
+  });
+
+  it("rejects a password shorter than 8 characters", () => {
+    expect(resetPasswordSchema.safeParse({ ...VALID_RESET, newPassword: "short1" }).success).toBe(
+      false
+    );
+  });
+
+  it("rejects a weak password the same way registerSchema would (previously reset-password only checked length)", () => {
+    // 8+ chars but only lowercase letters - registerSchema has always
+    // rejected this via the strength check; reset-password's old inline
+    // `newPassword.length < 8` check did not.
+    expect(
+      resetPasswordSchema.safeParse({ ...VALID_RESET, newPassword: "aaaaaaaa" }).success
+    ).toBe(false);
+  });
+});
+
+describe("signAndSubmitSchema", () => {
+  const VALID_SIGN_AND_SUBMIT = {
+    transactionId: "tx-1",
+    xdr: "AAAA...",
+    secretKey: "SABC...",
+  };
+
+  it("accepts a well-formed request", () => {
+    expect(signAndSubmitSchema.safeParse(VALID_SIGN_AND_SUBMIT).success).toBe(true);
+  });
+
+  it("rejects a missing transactionId", () => {
+    expect(
+      signAndSubmitSchema.safeParse({ ...VALID_SIGN_AND_SUBMIT, transactionId: "" }).success
+    ).toBe(false);
+  });
+
+  it("rejects a missing xdr", () => {
+    expect(signAndSubmitSchema.safeParse({ ...VALID_SIGN_AND_SUBMIT, xdr: "" }).success).toBe(
+      false
+    );
+  });
+
+  it("rejects a missing secretKey", () => {
+    expect(
+      signAndSubmitSchema.safeParse({ ...VALID_SIGN_AND_SUBMIT, secretKey: "" }).success
+    ).toBe(false);
+  });
+});
+
+describe("analyticsSchema", () => {
+  it("accepts a fully-populated pageview", () => {
+    expect(
+      analyticsSchema.safeParse({ url: "/dashboard", referrer: "https://google.com", ts: 123 })
+        .success
+    ).toBe(true);
+  });
+
+  it("accepts an empty body - every field is optional", () => {
+    expect(analyticsSchema.safeParse({}).success).toBe(true);
+  });
+
+  it("rejects a non-string url", () => {
+    expect(analyticsSchema.safeParse({ url: 12345 }).success).toBe(false);
+  });
+
+  it("rejects a non-number ts", () => {
+    expect(analyticsSchema.safeParse({ ts: "not-a-number" }).success).toBe(false);
+  });
+
+  it("rejects a url beyond the length cap", () => {
+    expect(analyticsSchema.safeParse({ url: "a".repeat(2049) }).success).toBe(false);
   });
 });
 

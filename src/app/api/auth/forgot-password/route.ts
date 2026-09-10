@@ -1,7 +1,14 @@
 import { NextRequest } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { forgotPasswordSchema } from "@/lib/validations";
 import { successResponse, errorResponse } from "@/lib/api-response";
-import { generateResetToken, rateLimit, sanitizeEmail, logSecurityEvent } from "@/lib/security";
+import {
+  generateResetToken,
+  rateLimit,
+  sanitizeEmail,
+  logSecurityEvent,
+  readBodyWithLimit,
+} from "@/lib/security";
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,12 +19,12 @@ export async function POST(request: NextRequest) {
       return errorResponse("Too many requests. Please try again later.", 429);
     }
 
-    const body = await request.json();
-    const email = sanitizeEmail(body.email || "");
-
-    if (!email || !email.includes("@")) {
-      return errorResponse("Invalid email address", 400);
+    const body = (await readBodyWithLimit(request)) as Record<string, unknown>;
+    const parsed = forgotPasswordSchema.safeParse(body);
+    if (!parsed.success) {
+      return errorResponse(parsed.error.errors[0].message, 400);
     }
+    const email = sanitizeEmail(parsed.data.email);
 
     // Always return success to prevent user enumeration
     // Even if the email doesn't exist, we return the same response

@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
-import { rateLimit, logSecurityEvent } from "@/lib/security";
+import { NextRequest, NextResponse } from "next/server";
+import { analyticsSchema } from "@/lib/validations";
+import { rateLimit, logSecurityEvent, readBodyWithLimit } from "@/lib/security";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
     const rl = rateLimit(`analytics:${ip}`, 60, 60_000);
@@ -10,8 +11,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false }, { status: 429 });
     }
 
-    const body = await request.json();
-    const { url, referrer, ts } = body;
+    const body = (await readBodyWithLimit(request)) as Record<string, unknown>;
+    const parsed = analyticsSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ success: false }, { status: 400 });
+    }
+    const { url, referrer, ts } = parsed.data;
 
     // In production, this would write to a database or analytics service.
     // For now, we log to server console (Vercel logs) for visibility.

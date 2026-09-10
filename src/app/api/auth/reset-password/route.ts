@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { hashPassword } from "@/lib/auth";
+import { resetPasswordSchema } from "@/lib/validations";
 import { successResponse, errorResponse } from "@/lib/api-response";
 import {
   validateResetToken,
@@ -19,11 +20,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = (await readBodyWithLimit(request)) as Record<string, unknown>;
-    const { token, newPassword } = body as { token?: string; newPassword?: string };
-
-    if (!token || !newPassword || newPassword.length < 8) {
-      return errorResponse("Invalid token or password must be at least 8 characters", 400);
+    const parsed = resetPasswordSchema.safeParse(body);
+    if (!parsed.success) {
+      return errorResponse(parsed.error.errors[0].message, 400);
     }
+    const { token, newPassword } = parsed.data;
 
     // Validate the reset token (checks expiry + signature)
     const resetData = validateResetToken(token);
