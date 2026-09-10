@@ -71,6 +71,14 @@ model Transaction {
 
   @@index([userId])
   @@index([status])
+  @@index([createdAt])
+  // Matches the real query in src/app/api/transactions/route.ts: filter by
+  // userId, order by createdAt desc. The single-column @@index([userId])
+  // above narrows to the right rows but leaves Postgres to sort them
+  // separately; this composite lets it walk the index in createdAt order
+  // directly (a B-tree index is scannable in either direction, so it also
+  // serves ORDER BY createdAt DESC, not just ASC).
+  @@index([userId, createdAt])
   @@map("transactions")
 }
 
