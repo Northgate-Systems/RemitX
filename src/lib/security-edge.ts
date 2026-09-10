@@ -6,14 +6,52 @@ import { NextResponse } from "next/server";
  * imported by middleware (which runs in the Edge Runtime).
  */
 
+// Single source of truth for the response security headers. `next.config.ts`
+// imports this same list for its `headers()` config so that static assets
+// excluded from the middleware matcher (see `config.matcher` in
+// middleware.ts - _next/static, images, .css/.js, etc.) still get the exact
+// same header values instead of a second, hand-copied set that can drift out
+// of sync (previously next.config.ts had X-Frame-Options: SAMEORIGIN and
+// Cross-Origin-Opener-Policy: same-origin-allow-popups while this file used
+// stricter DENY / same-origin - two different policies for the same site
+// depending on which path served the response).
+export const SECURITY_HEADERS: ReadonlyArray<{ key: string; value: string }> = [
+  {
+    key: "Content-Security-Policy",
+    value: [
+      "default-src 'self'",
+      // Allow Turnstile + Next.js inline scripts (Next injects inline scripts)
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com",
+      // Allow Tailwind-injected styles + Google Fonts
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      // Allow Google Fonts woff2 + Turnstile font assets
+      "font-src 'self' https://fonts.gstatic.com data: https://challenges.cloudflare.com",
+      // Allow our images + Turnstile injected pixel/favicon
+      "img-src 'self' data: blob: https://challenges.cloudflare.com",
+      // Turnstile connects to challenges.cloudflare.com for widget + validation
+      "connect-src 'self' https://horizon-testnet.stellar.org https://api.stellar.org https://challenges.cloudflare.com",
+      // Turnstile renders in an iframe hosted on challenges.cloudflare.com
+      "frame-src https://challenges.cloudflare.com",
+      "worker-src 'self' blob:",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'self'",
+    ].join("; "),
+  },
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+  { key: "X-XSS-Protection", value: "1; mode=block" },
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+  { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
+];
+
 export function applySecurityHeaders(response: NextResponse): NextResponse {
-  response.headers.set("X-Content-Type-Options", "nosniff");
-  response.headers.set("X-Frame-Options", "DENY");
-  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-  response.headers.set("X-XSS-Protection", "1; mode=block");
-  response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
-  response.headers.set("Cross-Origin-Resource-Policy", "same-origin");
+  for (const { key, value } of SECURITY_HEADERS) {
+    response.headers.set(key, value);
+  }
   return response;
 }
 
