@@ -193,3 +193,81 @@ export async function submitTransaction(signedXdr: string): Promise<{
     };
   }
 }
+
+// ---------------------------------------------------------------------------
+// Liquidity pool lookups - short-TTL in-memory cache
+//
+// Pool reserves don't need per-request freshness, but every lookup used to
+// hit Horizon's liquidityPools API live. Same pattern as the rate cache in
+// src/lib/rates.ts: cache the resolved result per asset code for a short
+// window so repeated requests (e.g. a dashboard polling every few seconds)
+// don't each pay a real network round-trip to Horizon.
+// ---------------------------------------------------------------------------
+
+const LIQUIDITY_CACHE_TTL_MS = 60_000; // 1 minute
+
+export interface LiquidityPoolResult {
+  pool: {
+    id: string;
+    reserves: { asset: string; amount: string }[];
+    totalShares: string;
+  } | null;
+  reason?: string;
+}
+
+interface LiquidityCacheEntry {
+  result: LiquidityPoolResult;
+  fetchedAt: number;
+}
+
+/** In-memory liquidity cache: key = uppercased asset code. */
+const liquidityCache = new Map<string, LiquidityCacheEntry>();
+
+/**
+ * Look up the top liquidity pool for an asset code.
+ *
+ * Returns `{ pool: null, reason }` (never throws) for an asset with no
+ * configured issuer or no pool - same graceful behavior the route handler
+ * had inline before this cache existed. That "no pool" answer is itself
+ * cached too: it won't change until an issuer is configured or a pool is
+ * created, so there's no reason to re-ask Horizon for it every request.
+ */
+export async function getLiquidityPool(
+  assetCode: string
+): Promise<{ result: LiquidityPoolResult; cached: boolean }> {
+  const upper = assetCode.toUpperCase();
+
+  const cached = liquidityCache.get(upper);
+  if (cached && Date.now() - cached.fetchedAt < LIQUIDITY_CACHE_TTL_MS) {
+    return { result: cached.result, cached: true };
+  }
+
+  let asset: Asset;
+  if (upper === "XLM") {
+    asset = Asset.native();
+  } else {
+    const issuer = process.env[`STELLAR_${upper}_ISSUER`];
+    if (!issuer) {
+      const result: LiquidityPoolResult = { pool: null, reason: `No issuer configured for ${upper}` };
+      liquidityCache.set(upper, { result, fetchedAt: Date.now() });
+      return { result, cached: false };
+    }
+    asset = new Asset(upper, issuer);
+  }
+
+  const pools = await server.liquidityPools().forAssets(asset).limit(1).order("desc").call();
+  const top = pools.records[0];
+
+  const result: LiquidityPoolResult = top
+    ? {
+        pool: {
+          id: top.id,
+          reserves: top.reserves.map((r) => ({ asset: r.asset, amount: r.amount })),
+          totalShares: top.total_shares,
+        },
+      }
+    : { pool: null, reason: `No liquidity pool found for ${upper}` };
+
+  liquidityCache.set(upper, { result, fetchedAt: Date.now() });
+  return { result, cached: false };
+}
