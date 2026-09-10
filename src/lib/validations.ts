@@ -1,11 +1,17 @@
 import { z } from "zod";
 import { getPasswordStrength, MIN_PASSWORD_SCORE } from "@/lib/password-strength";
+import { isDisposableEmailDomain } from "@/lib/disposable-email-domains";
 
 export const registerSchema = z
   .object({
     firstName: z.string().trim().min(1, "First name is required").max(50),
     lastName: z.string().trim().min(1, "Last name is required").max(50),
-    email: z.string().email("Invalid email address"),
+    email: z
+      .string()
+      .email("Invalid email address")
+      .refine((email) => !isDisposableEmailDomain(email), {
+        message: "Disposable email addresses are not allowed. Please use a permanent email address.",
+      }),
     password: z
       .string()
       .min(8, "Password must be at least 8 characters")
