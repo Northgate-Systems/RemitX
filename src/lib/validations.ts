@@ -53,3 +53,26 @@ export const rateQuerySchema = z.object({
 export const transactionIdSchema = z.object({
   id: z.string().uuid("Invalid transaction ID"),
 });
+
+// Query params for GET /api/transactions - all optional, all validated up
+// front so the route can build one Supabase query without inline checks.
+export const transactionQuerySchema = z
+  .object({
+    limit: z.coerce.number().int().min(1).max(100).default(50),
+    offset: z.coerce.number().int().min(0).default(0),
+    status: z.enum(["pending", "validating", "confirmed", "failed"]).optional(),
+    // Plain date or full ISO datetime - both parse fine via `new Date(...)`
+    // in the route; the regex just rejects garbage before it gets there.
+    from: z.string().regex(/^\d{4}-\d{2}-\d{2}/, "from must be an ISO date").optional(),
+    to: z.string().regex(/^\d{4}-\d{2}-\d{2}/, "to must be an ISO date").optional(),
+    // fromAmount is intentionally excluded: it's stored as a string to avoid
+    // float precision loss (see schema.prisma), so a DB-level ORDER BY on it
+    // would sort lexicographically ("10" before "9") instead of numerically -
+    // that's a worse result than no sort option at all.
+    sortBy: z.enum(["createdAt", "confirmedAt"]).default("createdAt"),
+    sortOrder: z.enum(["asc", "desc"]).default("desc"),
+  })
+  .refine(
+    (data) => !data.from || !data.to || new Date(data.from) <= new Date(data.to),
+    { message: "from must be before or equal to to", path: ["from"] }
+  );
