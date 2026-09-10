@@ -34,6 +34,27 @@ describe("registerSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  it("rejects a disposable-domain email with a dedicated message", () => {
+    const result = registerSchema.safeParse({
+      ...VALID_REGISTER,
+      email: "throwaway@mailinator.com",
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe(
+        "Disposable email addresses are not allowed. Please use a permanent email address."
+      );
+    }
+  });
+
+  it("rejects a disposable-domain email regardless of casing", () => {
+    const result = registerSchema.safeParse({
+      ...VALID_REGISTER,
+      email: "throwaway@Mailinator.COM",
+    });
+    expect(result.success).toBe(false);
+  });
+
   it("rejects a password shorter than 8 characters", () => {
     const result = registerSchema.safeParse({
       ...VALID_REGISTER,
