@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Landmark, Eye, EyeOff, Check, X } from "lucide-react";
+import { Landmark, Eye, EyeOff, Check, X, Copy, AlertTriangle } from "lucide-react";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import { getPasswordStrength, MIN_PASSWORD_SCORE } from "@/lib/password-strength";
 
@@ -19,6 +19,9 @@ export default function LoginPage() {
   const [turnstileToken, setTurnstileToken] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [revealedSecretKey, setRevealedSecretKey] = useState<string | null>(null);
+  const [secretKeySaved, setSecretKeySaved] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const strength = getPasswordStrength(password);
   const passwordsMatch = password === confirmPassword;
@@ -71,6 +74,14 @@ export default function LoginPage() {
         return;
       }
 
+      // Registration created a Stellar wallet - the secret key is only ever
+      // returned this one time, so show the reveal screen instead of
+      // redirecting straight to the dashboard.
+      if (isRegister && data.data?.stellarSecretKey) {
+        setRevealedSecretKey(data.data.stellarSecretKey);
+        return;
+      }
+
       router.push("/dashboard");
     } catch {
       setError("Network error. Please try again.");
@@ -78,6 +89,75 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleCopySecretKey() {
+    if (!revealedSecretKey) return;
+    try {
+      await navigator.clipboard.writeText(revealedSecretKey);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard API unavailable - the key is still selectable/visible.
+    }
+  }
+
+  if (revealedSecretKey) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-50 flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-md glass-card p-8 rounded-2xl shadow-lg">
+          <div className="text-center mb-6">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Landmark size={24} className="text-primary" />
+              <span className="font-bold text-xl text-primary">RemitX</span>
+            </div>
+            <h1 className="text-lg font-semibold text-primary">Save your Stellar secret key</h1>
+          </div>
+
+          <div className="flex gap-2 items-start bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+            <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-800">
+              This is shown once and never stored on our servers. If you lose it, we cannot recover
+              your wallet for you.
+            </p>
+          </div>
+
+          <div className="relative mb-4">
+            <code className="block w-full break-all bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 pr-10 text-xs font-mono text-gray-800">
+              {revealedSecretKey}
+            </code>
+            <button
+              type="button"
+              onClick={handleCopySecretKey}
+              className="absolute right-2 top-2 text-gray-400 hover:text-primary transition-colors"
+              aria-label="Copy secret key"
+            >
+              <Copy size={16} />
+            </button>
+          </div>
+          {copied && <p className="text-xs text-emerald-600 mb-4 -mt-2">Copied to clipboard</p>}
+
+          <label className="flex items-start gap-2 text-sm text-gray-700 mb-4 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={secretKeySaved}
+              onChange={(e) => setSecretKeySaved(e.target.checked)}
+              className="mt-0.5"
+            />
+            I&apos;ve saved my secret key somewhere safe
+          </label>
+
+          <button
+            type="button"
+            disabled={!secretKeySaved}
+            onClick={() => router.push("/dashboard")}
+            className="w-full py-2.5 bg-primary text-white rounded-lg font-semibold text-sm hover:shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Continue to dashboard
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
