@@ -1,8 +1,14 @@
 import { NextRequest } from "next/server";
-import { Asset } from "@stellar/stellar-sdk";
 import { getCurrentUser } from "@/lib/auth";
-import { server } from "@/lib/stellar";
+import { getLiquidityPool } from "@/lib/stellar";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
+
+// getLiquidityPool() already caches per-asset for 60s (see
+// LIQUIDITY_CACHE_TTL_MS in src/lib/stellar.ts), so the browser/CDN layer
+// here matches that window. `private` (not `public`) - this route requires
+// a session, so a shared/CDN cache must never serve one user's response to
+// a different, unauthenticated request.
+const LIQUIDITY_CACHE_CONTROL = "private, max-age=60, stale-while-revalidate=120";
 
 /** Real Horizon liquidity pool reserves for a given asset code (top pool by
  * reserve size). Returns null data if the asset has no configured issuer or
@@ -10,45 +16,29 @@ import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
-    if (!user) return unauthorizedResponse();
+    if (!user) {
+      const response = unauthorizedResponse();
+      response.headers.set("Cache-Control", "no-store");
+      return response;
+    }
 
     const { searchParams } = new URL(request.url);
     const assetCode = searchParams.get("asset");
-    if (!assetCode) return errorResponse("asset query parameter is required", 400);
-
-    const upper = assetCode.toUpperCase();
-    let asset: Asset;
-    if (upper === "XLM") {
-      asset = Asset.native();
-    } else {
-      const issuer = process.env[`STELLAR_${upper}_ISSUER`];
-      if (!issuer) {
-        return successResponse({ pool: null, reason: `No issuer configured for ${upper}` });
-      }
-      asset = new Asset(upper, issuer);
+    if (!assetCode) {
+      const response = errorResponse("asset query parameter is required", 400);
+      response.headers.set("Cache-Control", "no-store");
+      return response;
     }
 
-    const pools = await server
-      .liquidityPools()
-      .forAssets(asset)
-      .limit(1)
-      .order("desc")
-      .call();
+    const { result } = await getLiquidityPool(assetCode);
 
-    const top = pools.records[0];
-    if (!top) {
-      return successResponse({ pool: null, reason: `No liquidity pool found for ${upper}` });
-    }
-
-    return successResponse({
-      pool: {
-        id: top.id,
-        reserves: top.reserves.map((r) => ({ asset: r.asset, amount: r.amount })),
-        totalShares: top.total_shares,
-      },
-    });
+    const response = successResponse(result);
+    response.headers.set("Cache-Control", LIQUIDITY_CACHE_CONTROL);
+    return response;
   } catch (err: unknown) {
     console.error("Liquidity fetch error:", err);
-    return errorResponse(err instanceof Error ? err.message : "Failed to fetch liquidity", 500);
+    const response = errorResponse(err instanceof Error ? err.message : "Failed to fetch liquidity", 500);
+    response.headers.set("Cache-Control", "no-store");
+    return response;
   }
 }
