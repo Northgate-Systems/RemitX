@@ -3,7 +3,9 @@ import { Keypair, TransactionBuilder } from "@stellar/stellar-sdk";
 import { supabase } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth";
 import { submitTransaction, NETWORK_PASSPHRASE } from "@/lib/stellar";
+import { signAndSubmitSchema } from "@/lib/validations";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
+import { readBodyWithLimit } from "@/lib/security";
 import type { Transaction } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -23,16 +25,12 @@ export async function POST(request: NextRequest) {
       return unauthorizedResponse();
     }
 
-    const body = await request.json();
-    const { transactionId, xdr, secretKey } = body as {
-      transactionId?: string;
-      xdr?: string;
-      secretKey?: string;
-    };
-
-    if (!transactionId || !xdr || !secretKey) {
-      return errorResponse("transactionId, xdr, and secretKey are all required", 400);
+    const body = (await readBodyWithLimit(request)) as Record<string, unknown>;
+    const parsed = signAndSubmitSchema.safeParse(body);
+    if (!parsed.success) {
+      return errorResponse(parsed.error.errors[0].message, 400);
     }
+    const { transactionId, xdr, secretKey } = parsed.data;
 
     const { data: tx, error: txError } = await supabase
       .from("transactions")
