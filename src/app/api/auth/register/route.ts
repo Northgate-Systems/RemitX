@@ -54,15 +54,17 @@ export async function POST(request: NextRequest) {
 
     const passwordHash = await hashPassword(password);
 
-    // Generate Stellar account
+    // Generate Stellar account. The secret key only ever exists in this
+    // request's memory - it's handed back to the client once in the
+    // response below and never stored server-side or logged, so this is
+    // the one and only chance the user has to save it.
     let stellarPublicKey: string | null = null;
+    let stellarSecretKey: string | null = null;
     try {
       const { createTestnetAccount } = await import("@/lib/stellar");
       const account = await createTestnetAccount();
       stellarPublicKey = account.publicKey;
-      // TODO(product): In production, return the secret key to the user once for safekeeping.
-      // Do NOT store it server-side. For testnet Dev UX we log it.
-      console.log(`[DEV] New user ${cleanEmail} Stellar secret: ${account.secretKey}`);
+      stellarSecretKey = account.secretKey;
     } catch (err) {
       console.warn("Stellar account creation failed, continuing without one:", err);
     }
@@ -93,7 +95,10 @@ export async function POST(request: NextRequest) {
     const token = signToken(safeUser, 1);
     await setSessionCookie(token);
 
-    return successResponse({ user: safeUser }, 201);
+    return successResponse(
+      { user: safeUser, stellarSecretKey },
+      201
+    );
   } catch (err) {
     console.error("Registration error:", err);
     const message = err instanceof Error ? err.message : "";
