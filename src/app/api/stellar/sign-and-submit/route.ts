@@ -4,6 +4,11 @@ import { supabase } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth";
 import { submitTransaction, NETWORK_PASSPHRASE } from "@/lib/stellar";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
+import {
+  claimPendingTransaction,
+  releasePendingClaim,
+  finalizeTransaction,
+} from "@/lib/transaction-state";
 import type { Transaction } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -60,30 +65,48 @@ export async function POST(request: NextRequest) {
     const transaction = TransactionBuilder.fromXDR(xdr, NETWORK_PASSPHRASE);
     transaction.sign(keypair);
 
-    await supabase
-      .from("transactions")
-      .update({ status: "validating" })
-      .eq("id", transactionId);
+    // Same compare-and-set as /api/stellar/submit: the status check above is
+    // a separate round trip from this write, so only a conditional update can
+    // stop two concurrent requests for the same transactionId from both
+    // broadcasting the payment.
+    const claim = await claimPendingTransaction(transactionId);
+    if (!claim.claimed) {
+      if (claim.reason === "not_found") {
+        return errorResponse("Transaction not found", 404);
+      }
+      return errorResponse(
+        `Transaction is already in status: ${claim.status}`,
+        409
+      );
+    }
 
-    const result = await submitTransaction(transaction.toXDR());
+    let result;
+    try {
+      result = await submitTransaction(transaction.toXDR());
+    } catch (submitErr) {
+      // Nothing reached the network, so release the claim instead of leaving
+      // the row stuck in "validating", where the guard above would reject
+      // every future retry of a payment that was never submitted.
+      await releasePendingClaim(transactionId);
+      throw submitErr;
+    }
 
-    const { data: updated, error: updateError } = await supabase
-      .from("transactions")
-      .update({
-        status: result.status === "confirmed" ? "confirmed" : "failed",
-        stellarTxHash: result.hash || null,
-        confirmedAt: result.status === "confirmed" ? new Date().toISOString() : null,
-      })
-      .eq("id", transactionId)
-      .select("*")
-      .single();
+    const finalTx = await finalizeTransaction(transactionId, {
+      status: result.status === "confirmed" ? "confirmed" : "failed",
+      stellarTxHash: result.hash || null,
+    });
 
-    if (updateError || !updated) {
-      console.error("Sign-and-submit update error:", updateError);
+    if (!finalTx) {
+      // Deliberately not rolled back: the transaction was already broadcast,
+      // so re-submitting it would risk paying twice.
+      console.error("Sign-and-submit update error: could not record final status", {
+        transactionId,
+        stellarTxHash: result.hash,
+        status: result.status,
+      });
       return errorResponse("Failed to update transaction status", 500);
     }
 
-    const finalTx = updated as Transaction;
     return successResponse({
       transactionId: finalTx.id,
       status: finalTx.status,

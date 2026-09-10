@@ -4,6 +4,11 @@ import { getCurrentUser } from "@/lib/auth";
 import { submitTransaction } from "@/lib/stellar";
 import { stellarSubmitSchema } from "@/lib/validations";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
+import {
+  claimPendingTransaction,
+  releasePendingClaim,
+  finalizeTransaction,
+} from "@/lib/transaction-state";
 import type { Transaction } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
@@ -40,32 +45,52 @@ export async function POST(request: NextRequest) {
       return errorResponse(`Transaction is already in status: ${existing.status}`, 400);
     }
 
-    // Status is set to "validating" while Horizon processes the signed
-    // transaction; submitTransaction() below resolves it to confirmed/failed.
-    await supabase
-      .from("transactions")
-      .update({ status: "validating" })
-      .eq("id", transactionId);
+    // Claim the transaction: flip pending -> validating, but only if it is
+    // still pending at the moment of the write. The status check above is a
+    // separate round trip, so without this compare-and-set two concurrent
+    // requests for the same transactionId would both get past it and both
+    // broadcast the payment to Horizon.
+    const claim = await claimPendingTransaction(transactionId);
+    if (!claim.claimed) {
+      if (claim.reason === "not_found") {
+        return errorResponse("Transaction not found", 404);
+      }
+      return errorResponse(
+        `Transaction is already in status: ${claim.status}`,
+        409
+      );
+    }
 
-    const result = await submitTransaction(signedXdr);
+    let result;
+    try {
+      result = await submitTransaction(signedXdr);
+    } catch (submitErr) {
+      // Nothing was broadcast (or we never learned that it was), so the row
+      // must not be left stuck in "validating" - that state is rejected by
+      // the guard above and would make this transaction permanently
+      // un-submittable. Put it back to pending so the user can retry.
+      await releasePendingClaim(transactionId);
+      throw submitErr;
+    }
 
-    const { data: updated, error: updateError } = await supabase
-      .from("transactions")
-      .update({
-        status: result.status === "confirmed" ? "confirmed" : "failed",
+    const finalTx = await finalizeTransaction(transactionId, {
+      status: result.status === "confirmed" ? "confirmed" : "failed",
+      stellarTxHash: result.hash,
+    });
+
+    if (!finalTx) {
+      // The broadcast already happened, so the row is deliberately NOT rolled
+      // back to pending here - retrying would risk a double submission. It
+      // stays in "validating" and the recorded Horizon hash below lets the
+      // state be reconciled.
+      console.error("Submit update error: could not record final status", {
+        transactionId,
         stellarTxHash: result.hash,
-        confirmedAt: result.status === "confirmed" ? new Date().toISOString() : null,
-      })
-      .eq("id", transactionId)
-      .select("*")
-      .single();
-
-    if (updateError || !updated) {
-      console.error("Submit update error:", updateError);
+        status: result.status,
+      });
       return errorResponse("Failed to update transaction status", 500);
     }
 
-    const finalTx = updated as Transaction;
     return successResponse({
       transactionId: finalTx.id,
       stellarTxHash: finalTx.stellarTxHash,
