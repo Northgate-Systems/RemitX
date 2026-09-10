@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import CookieBanner from "@/components/CookieBanner";
 import Analytics from "@/components/Analytics";
+import OfflineBanner from "@/components/OfflineBanner";
 
 export const metadata: Metadata = {
   title: {
@@ -74,6 +75,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body-md text-on-background bg-background min-h-screen antialiased">
+        <OfflineBanner />
         {children}
         <CookieBanner />
         <Analytics />
