@@ -6,7 +6,7 @@ import { verifyTurnstileToken } from "@/lib/turnstile";
 import { successResponse, errorResponse } from "@/lib/api-response";
 import type { User } from "@/lib/types";
 import {
-  rateLimit,
+  enforceRateLimit,
   checkAccountLockout,
   recordFailedLogin,
   resetLoginAttempts,
@@ -17,13 +17,9 @@ import {
 
 export async function POST(request: NextRequest) {
   try {
-    // Rate limit by IP
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    const rl = rateLimit(`login:${ip}`, 10, 60_000);
-    if (!rl.allowed) {
-      logSecurityEvent("rate_limited", { ip, endpoint: "login" });
-      return errorResponse("Too many attempts. Please try again later.", 429);
-    }
+    // Rate limit by IP (policy + key derivation live in src/lib/security.ts)
+    const limited = enforceRateLimit(request, "login");
+    if (limited) return limited;
 
     const body = (await readBodyWithLimit(request)) as Record<string, unknown>;
     const parsed = loginSchema.safeParse(body);

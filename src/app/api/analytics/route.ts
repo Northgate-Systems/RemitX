@@ -1,14 +1,12 @@
 import { NextResponse } from "next/server";
-import { rateLimit, logSecurityEvent } from "@/lib/security";
+import { enforceRateLimit, getClientIp } from "@/lib/security";
 
 export async function POST(request: Request) {
   try {
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    const rl = rateLimit(`analytics:${ip}`, 60, 60_000);
-    if (!rl.allowed) {
-      logSecurityEvent("rate_limited", { ip, endpoint: "analytics" });
-      return NextResponse.json({ success: false }, { status: 429 });
-    }
+    const limited = enforceRateLimit(request, "analytics");
+    if (limited) return limited;
+
+    const ip = getClientIp(request) ?? "unknown";
 
     const body = await request.json();
     const { url, referrer, ts } = body;

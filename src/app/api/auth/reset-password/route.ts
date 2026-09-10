@@ -4,19 +4,15 @@ import { hashPassword } from "@/lib/auth";
 import { successResponse, errorResponse } from "@/lib/api-response";
 import {
   validateResetToken,
-  rateLimit,
+  enforceRateLimit,
   logSecurityEvent,
   readBodyWithLimit,
 } from "@/lib/security";
 
 export async function POST(request: NextRequest) {
   try {
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    const rl = rateLimit(`reset-password:${ip}`, 5, 60_000);
-    if (!rl.allowed) {
-      logSecurityEvent("rate_limited", { ip, endpoint: "reset-password" });
-      return errorResponse("Too many attempts. Please try again later.", 429);
-    }
+    const limited = enforceRateLimit(request, "reset-password");
+    if (limited) return limited;
 
     const body = (await readBodyWithLimit(request)) as Record<string, unknown>;
     const { token, newPassword } = body as { token?: string; newPassword?: string };

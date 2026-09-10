@@ -6,7 +6,7 @@ import { verifyTurnstileToken } from "@/lib/turnstile";
 import { successResponse, errorResponse } from "@/lib/api-response";
 import type { User } from "@/lib/types";
 import {
-  rateLimit,
+  enforceRateLimit,
   sanitizeInput,
   sanitizeEmail,
   logSecurityEvent,
@@ -16,12 +16,8 @@ import {
 export async function POST(request: NextRequest) {
   try {
     // Rate limit by IP
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    const rl = rateLimit(`register:${ip}`, 5, 60_000);
-    if (!rl.allowed) {
-      logSecurityEvent("rate_limited", { ip, endpoint: "register" });
-      return errorResponse("Too many registration attempts. Please try again later.", 429);
-    }
+    const limited = enforceRateLimit(request, "register");
+    if (limited) return limited;
 
     const body = (await readBodyWithLimit(request)) as Record<string, unknown>;
     const parsed = registerSchema.safeParse(body);
