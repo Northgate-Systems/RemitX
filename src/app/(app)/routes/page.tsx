@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from "react";
-import { Zap, RefreshCw, ArrowRight, Sparkles } from "lucide-react";
+import { Zap, RefreshCw, ArrowRight, Sparkles, Search } from "lucide-react";
 
 interface Route {
   sourceAmount: string;
@@ -19,10 +19,18 @@ export default function RoutesPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  // Horizon can return more than a handful of paths for a liquid pair, so
+  // let the user narrow the result list down once it's worth narrowing.
+  const [pathQuery, setPathQuery] = useState("");
+  const [hopFilter, setHopFilter] = useState<"all" | "direct" | "multi">("all");
 
   const search = useCallback(async () => {
     setLoading(true);
     setError(null);
+    // A fresh search means a fresh result set - don't let a filter from the
+    // previous pair silently hide routes for the new one.
+    setPathQuery("");
+    setHopFilter("all");
     try {
       const res = await fetch(`/api/stellar/routes?from=${fromAsset}&to=${toAsset}&amount=${amount}`);
       const json = await res.json();
@@ -50,6 +58,15 @@ export default function RoutesPage() {
       ignore = true;
     };
   }, [search]);
+
+  const filteredRoutes = routes.filter((route) => {
+    if (hopFilter === "direct" && route.path.length > 2) return false;
+    if (hopFilter === "multi" && route.path.length <= 2) return false;
+    const query = pathQuery.trim().toLowerCase();
+    if (query && !route.path.some((asset) => asset.toLowerCase().includes(query))) return false;
+    return true;
+  });
+  const isFiltering = pathQuery.trim().length > 0 || hopFilter !== "all";
 
   return (
     <main className="min-h-screen bg-gray-50/50">
@@ -106,6 +123,31 @@ export default function RoutesPage() {
 
         {error && <div className="mb-4 px-4 py-3 rounded-xl bg-red-50 text-red-700 text-sm">{error}</div>}
 
+        {/* Result filters - only worth showing once there's more than one route to narrow down */}
+        {!loading && routes.length > 1 && (
+          <div className="flex flex-col sm:flex-row gap-2 mb-4">
+            <div className="relative flex-1 sm:max-w-xs">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={pathQuery}
+                onChange={(e) => setPathQuery(e.target.value)}
+                placeholder="Filter by asset in path (e.g. USDC)"
+                className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <select
+              value={hopFilter}
+              onChange={(e) => setHopFilter(e.target.value as "all" | "direct" | "multi")}
+              className="border border-gray-200 rounded-lg text-sm font-semibold px-3 py-2 outline-none focus:ring-2 focus:ring-primary/20"
+            >
+              <option value="all">All routes</option>
+              <option value="direct">Direct only</option>
+              <option value="multi">Multi-hop only</option>
+            </select>
+          </div>
+        )}
+
         {/* Routes */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 lg:gap-4">
           {loading ? (
@@ -114,8 +156,23 @@ export default function RoutesPage() {
             <div className="md:col-span-3 bg-white border border-gray-200 rounded-2xl p-8 text-center text-sm text-gray-400">
               No routes found for {fromAsset} → {toAsset} at this amount.
             </div>
+          ) : filteredRoutes.length === 0 ? (
+            <div className="md:col-span-3 bg-white border border-gray-200 rounded-2xl p-8 text-center text-sm text-gray-400">
+              No routes match this filter.{" "}
+              {isFiltering && (
+                <button
+                  onClick={() => {
+                    setPathQuery("");
+                    setHopFilter("all");
+                  }}
+                  className="text-primary font-semibold hover:underline"
+                >
+                  Clear filter
+                </button>
+              )}
+            </div>
           ) : (
-            routes.map((route, i) => (
+            filteredRoutes.map((route, i) => (
               <div
                 key={i}
                 className={`flex flex-col bg-white rounded-2xl shadow-sm overflow-hidden transition-all group relative ${
