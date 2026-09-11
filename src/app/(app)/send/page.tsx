@@ -4,15 +4,17 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRightLeft, AtSign, ArrowRight, Info, RefreshCw, AlertCircle, CheckCircle2 } from "lucide-react";
 import { checkStellarPublicKey, STELLAR_PUBLIC_KEY_LENGTH } from "@/lib/stellar-address";
+import { useUnsavedChangesWarning } from "@/hooks/useUnsavedChangesWarning";
 
 const ASSETS = ["XLM", "USDC", "USD", "NGN", "PHP", "GBP"];
 const QUOTE_REFRESH_MS = 15_000;
+const DEFAULT_AMOUNT = "100.00";
 
 export default function SendMoneyPage() {
   const router = useRouter();
   const [fromAsset, setFromAsset] = useState("USD");
   const [toAsset, setToAsset] = useState("NGN");
-  const [amount, setAmount] = useState("100.00");
+  const [amount, setAmount] = useState(DEFAULT_AMOUNT);
   const [recipient, setRecipient] = useState("");
   const [recipientTouched, setRecipientTouched] = useState(false);
   const [rate, setRate] = useState<string | null>(null);
@@ -80,6 +82,12 @@ export default function SendMoneyPage() {
     trimmedRecipient.length > 0 &&
     (recipientTouched || trimmedRecipient.length >= STELLAR_PUBLIC_KEY_LENGTH);
   const canContinue = numericAmount > 0 && recipientCheck.valid && !!rate && !rateLoading;
+
+  // Warn on tab close / refresh / typed-URL navigation once the user has
+  // actually put something into the form, so an accidental close doesn't
+  // silently lose a half-filled transfer.
+  const isDirty = trimmedRecipient.length > 0 || amount !== DEFAULT_AMOUNT;
+  useUnsavedChangesWarning(isDirty);
 
   const handleContinue = async () => {
     if (!canContinue) return;
