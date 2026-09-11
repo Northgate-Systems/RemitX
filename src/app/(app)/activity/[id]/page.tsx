@@ -49,6 +49,21 @@ const ESCROW_ICON: Record<EscrowDetail["status"], typeof Lock> = {
   expired: Clock,
 };
 
+// The success view already had this breadcrumb, but the loading skeleton
+// and the error view didn't - so anyone landing on a slow-loading or
+// not-found transaction had zero way back to the list except the browser's
+// back button. Sharing one breadcrumb across all three render branches
+// closes that gap.
+function Breadcrumb({ current }: { current: string }) {
+  return (
+    <nav className="flex items-center gap-1.5 text-xs text-gray-400 font-semibold">
+      <Link href="/activity" className="hover:text-primary transition-colors">Activity</Link>
+      <ChevronRight size={14} />
+      <span className="text-primary font-bold">{current}</span>
+    </nav>
+  );
+}
+
 export default function TransactionDetailPage() {
   const params = useParams();
   const id = params.id as string;
@@ -91,6 +106,7 @@ export default function TransactionDetailPage() {
     return (
       <main className="min-h-screen bg-gray-50/50 p-6">
         <div className="max-w-3xl mx-auto space-y-3">
+          <Breadcrumb current={id} />
           <div className="h-6 w-48 bg-gray-200 rounded animate-pulse" />
           <div className="h-40 bg-white border border-gray-200 rounded-xl animate-pulse" />
         </div>
@@ -100,10 +116,15 @@ export default function TransactionDetailPage() {
 
   if (error || !tx) {
     return (
-      <main className="min-h-screen bg-gray-50/50 flex items-center justify-center">
-        <p className="text-sm text-gray-500">
-          {error || "Transaction not found."} <Link href="/activity" className="text-primary font-semibold">Back to Activity</Link>
-        </p>
+      <main className="min-h-screen bg-gray-50/50">
+        <div className="max-w-3xl mx-auto px-4 lg:px-6 py-6 lg:py-8 space-y-6">
+          <Breadcrumb current={id} />
+          <div className="flex items-center justify-center">
+            <p className="text-sm text-gray-500">
+              {error || "Transaction not found."} <Link href="/activity" className="text-primary font-semibold">Back to Activity</Link>
+            </p>
+          </div>
+        </div>
       </main>
     );
   }
@@ -113,11 +134,7 @@ export default function TransactionDetailPage() {
   return (
     <main className="min-h-screen bg-gray-50/50">
       <div className="max-w-3xl mx-auto px-4 lg:px-6 py-6 lg:py-8 space-y-4">
-        <nav className="flex items-center gap-1.5 text-xs text-gray-400 font-semibold">
-          <Link href="/activity" className="hover:text-primary transition-colors">Activity</Link>
-          <ChevronRight size={14} />
-          <span className="text-primary font-bold">{tx.id}</span>
-        </nav>
+        <Breadcrumb current={tx.id} />
 
         <div className="bg-white rounded-xl shadow-sm p-5 lg:p-6 border border-gray-200">
           <div className="flex justify-between items-start mb-4">
