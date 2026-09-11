@@ -7,6 +7,9 @@ import {
   ListFilter,
   Download,
   BadgeCheck,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
 } from "lucide-react";
 
 interface AnchorRow {
@@ -25,6 +28,14 @@ interface AnchorRow {
 const COUNTRIES = ["All", "Nigeria", "Philippines", "Mexico", "Argentina", "European Union"];
 const ASSETS = ["USDC", "EURC", "XLM"];
 
+// "Supported currency" and "rating" aren't sortable in a useful way here:
+// assetCode is a single fixed value per view (it's the filter above, not a
+// per-row field once results come back), and there's no rating field
+// anywhere in AnchorRow/listAnchors(). Anchor name and corridor are the
+// closest stand-ins that actually vary row-to-row.
+type SortKey = "name" | "corridor" | "feePercent";
+type SortDir = "asc" | "desc";
+
 export default function AnchorsPage() {
   const [anchors, setAnchors] = useState<AnchorRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +43,8 @@ export default function AnchorsPage() {
   const [assetCode, setAssetCode] = useState("USDC");
   const [amount, setAmount] = useState("1000");
   const [error, setError] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("feePercent");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -64,9 +77,30 @@ export default function AnchorsPage() {
     };
   }, [load]);
 
+  const toggleSort = (key: SortKey) => {
+    if (key === sortKey) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  };
+
+  const sortIcon = (key: SortKey) => {
+    if (key !== sortKey) return <ArrowUpDown size={11} className="text-white/40" />;
+    return sortDir === "asc" ? <ArrowUp size={11} /> : <ArrowDown size={11} />;
+  };
+
+  const sortedAnchors = [...anchors].sort((a, b) => {
+    let cmp = 0;
+    if (sortKey === "feePercent") cmp = a.feePercent - b.feePercent;
+    else cmp = a[sortKey].localeCompare(b[sortKey]);
+    return sortDir === "asc" ? cmp : -cmp;
+  });
+
   const exportCsv = () => {
     const header = "Name,Domain,Corridor,Asset,Fee %,Est. Fee,Settlement\n";
-    const rows = anchors
+    const rows = sortedAnchors
       .map((a) => `${a.name},${a.domain},${a.corridor},${a.assetCode},${a.feePercent},${a.estimatedFee},${a.typicalSettlement}`)
       .join("\n");
     const blob = new Blob([header + rows], { type: "text/csv" });
@@ -156,19 +190,31 @@ export default function AnchorsPage() {
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-primary text-white">
-                  <th className="py-3 px-4 text-[10px] font-bold uppercase tracking-wider">Anchor</th>
-                  <th className="py-3 px-4 text-[10px] font-bold uppercase tracking-wider hidden sm:table-cell">Corridor</th>
-                  <th className="py-3 px-4 text-[10px] font-bold uppercase tracking-wider text-right">Fee</th>
+                  <th className="py-3 px-4 text-[10px] font-bold uppercase tracking-wider">
+                    <button onClick={() => toggleSort("name")} className="flex items-center gap-1 hover:opacity-80 transition-opacity">
+                      Anchor {sortIcon("name")}
+                    </button>
+                  </th>
+                  <th className="py-3 px-4 text-[10px] font-bold uppercase tracking-wider hidden sm:table-cell">
+                    <button onClick={() => toggleSort("corridor")} className="flex items-center gap-1 hover:opacity-80 transition-opacity">
+                      Corridor {sortIcon("corridor")}
+                    </button>
+                  </th>
+                  <th className="py-3 px-4 text-[10px] font-bold uppercase tracking-wider text-right">
+                    <button onClick={() => toggleSort("feePercent")} className="flex items-center gap-1 ml-auto hover:opacity-80 transition-opacity">
+                      Fee {sortIcon("feePercent")}
+                    </button>
+                  </th>
                   <th className="py-3 px-4 text-[10px] font-bold uppercase tracking-wider text-right hidden md:table-cell">Settlement</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {loading ? (
                   <tr><td colSpan={4} className="py-8 text-center text-sm text-gray-400">Loading anchors…</td></tr>
-                ) : anchors.length === 0 ? (
+                ) : sortedAnchors.length === 0 ? (
                   <tr><td colSpan={4} className="py-8 text-center text-sm text-gray-400">No anchors match these filters.</td></tr>
                 ) : (
-                  anchors.map((a) => (
+                  sortedAnchors.map((a) => (
                     <tr key={a.id} className="hover:bg-gray-50 transition-all duration-200">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2.5">
