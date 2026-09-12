@@ -465,3 +465,30 @@
   opacity: 1;
   pointer-events: all;
 }
+
+/* ============================================
+   PRINT / PDF EXPORT
+   ============================================ */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  header,
+  .sidebar-desktop,
+  .sidebar-overlay,
+  .mobile-bottom-nav {
+    display: none !important;
+  }
+  .lg\:ml-sidebar-width {
+    margin-left: 0 !important;
+  }
+  .pt-header-height {
+    padding-top: 0 !important;
+  }
+  body {
+    background: #fff !important;
+  }
+  a[href]::after {
+    content: none !important;
+  }
+}
