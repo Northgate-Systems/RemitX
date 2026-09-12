@@ -101,7 +101,9 @@ describe("loginSchema", () => {
 });
 
 describe("stellarSendSchema", () => {
-  const VALID_RECIPIENT = "G" + "A".repeat(55);
+  // A real checksum-valid Stellar public key (not just the right shape) --
+  // needed now that stellarSendSchema actually verifies the checksum.
+  const VALID_RECIPIENT = "GCZRP7FQPKEO2CAAKWV6UTFJBDUTFS7SCTKILVJ62P6G2VPBX3WTNPEH";
 
   it("accepts a well-formed send request", () => {
     const result = stellarSendSchema.safeParse({

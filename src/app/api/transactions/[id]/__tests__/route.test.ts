@@ -46,7 +46,13 @@ function fakeUser(id = OWNER_ID) {
     email: `${id}@example.com`,
     firstName: "Test",
     lastName: "User",
+    stellarPublicKey: null,
+    kycStatus: "pending" as const,
+    sessionVersion: 1,
+    failedLoginAttempts: 0,
+    lockedUntil: null,
     createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   };
 }
 
