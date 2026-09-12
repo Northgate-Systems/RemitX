@@ -12,6 +12,7 @@ import {
   Unlock,
   RotateCcw,
   Clock,
+  Printer,
 } from "lucide-react";
 
 interface TransactionDetail {
@@ -111,15 +112,28 @@ export default function TransactionDetailPage() {
   const EscrowIcon = escrow ? ESCROW_ICON[escrow.status] : null;
 
   return (
-    <main className="min-h-screen bg-gray-50/50">
-      <div className="max-w-3xl mx-auto px-4 lg:px-6 py-6 lg:py-8 space-y-4">
-        <nav className="flex items-center gap-1.5 text-xs text-gray-400 font-semibold">
-          <Link href="/activity" className="hover:text-primary transition-colors">Activity</Link>
-          <ChevronRight size={14} />
-          <span className="text-primary font-bold">{tx.id}</span>
+    <main className="min-h-screen bg-gray-50/50 print:bg-white">
+      <div className="max-w-3xl mx-auto px-4 lg:px-6 py-6 lg:py-8 space-y-4 print:p-0 print:max-w-full">
+        <nav className="no-print flex items-center justify-between gap-1.5">
+          <div className="flex items-center gap-1.5 text-xs text-gray-400 font-semibold">
+            <Link href="/activity" className="hover:text-primary transition-colors">Activity</Link>
+            <ChevronRight size={14} />
+            <span className="text-primary font-bold">{tx.id}</span>
+          </div>
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-1.5 text-xs font-bold text-gray-600 hover:text-primary transition-colors px-2.5 py-1.5 rounded-lg border border-gray-200 hover:border-primary/30"
+          >
+            <Printer size={13} />
+            Print / Save as PDF
+          </button>
         </nav>
 
-        <div className="bg-white rounded-xl shadow-sm p-5 lg:p-6 border border-gray-200">
+        <p className="hidden print:block text-[10px] text-gray-400 uppercase font-bold mb-2">
+          RemitX — Transaction Receipt
+        </p>
+
+        <div className="bg-white rounded-xl shadow-sm p-5 lg:p-6 border border-gray-200 print:shadow-none print:border-0 print:rounded-none print:p-0">
           <div className="flex justify-between items-start mb-4">
             <div>
               <p className="text-[10px] text-gray-400 uppercase font-bold mb-1">Transaction</p>
@@ -127,7 +141,7 @@ export default function TransactionDetailPage() {
                 {tx.fromAmount} {tx.fromAsset} → {tx.toAmount ?? "?"} {tx.toAsset}
               </h2>
             </div>
-            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${STATUS_STYLE[tx.status]}`}>
+            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${STATUS_STYLE[tx.status]} print:border print:border-gray-400`}>
               {tx.status}
             </span>
           </div>
@@ -150,21 +164,24 @@ export default function TransactionDetailPage() {
             {tx.stellarTxHash && (
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-500">Stellar tx hash</span>
-                <button onClick={copyHash} className="flex items-center gap-1.5 text-primary font-semibold text-xs">
+                <button onClick={copyHash} className="no-print flex items-center gap-1.5 text-primary font-semibold text-xs">
                   <Link2 size={13} />
                   <span className="truncate max-w-[160px]">{tx.stellarTxHash}</span>
                   {copied ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
                 </button>
+                <span className="hidden print:inline text-xs text-gray-700 break-all text-right font-mono">
+                  {tx.stellarTxHash}
+                </span>
               </div>
             )}
           </div>
         </div>
 
         {escrow && EscrowIcon && (
-          <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-200">
+          <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-200 print:shadow-none print:border-t print:border-x-0 print:border-b-0 print:rounded-none print:p-0 print:pt-4 print:mt-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-gray-800">Escrow status</h3>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-indigo-50 text-indigo-700">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-indigo-50 text-indigo-700 print:border print:border-gray-400">
                 <EscrowIcon size={12} /> {escrow.status}
               </span>
             </div>
@@ -174,7 +191,7 @@ export default function TransactionDetailPage() {
             <button
               disabled
               title="Escrow release authorization isn't implemented yet - see contracts/escrow/README.md"
-              className="w-full py-2.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-400 cursor-not-allowed"
+              className="no-print w-full py-2.5 rounded-xl text-xs font-bold bg-gray-100 text-gray-400 cursor-not-allowed"
             >
               Release (pending authorization design)
             </button>
