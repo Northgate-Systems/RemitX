@@ -33,11 +33,15 @@ const STATUS_STYLE: Record<Transaction["status"], string> = {
 
 const FILTERS: Array<"all" | Transaction["status"]> = ["all", "pending", "validating", "confirmed", "failed"];
 
+const PAGE_SIZE = 50;
+
 function ActivityInner() {
   const searchParams = useSearchParams();
   const q = searchParams.get("q")?.toLowerCase() ?? "";
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("all");
   const [error, setError] = useState<string | null>(null);
 
@@ -45,10 +49,11 @@ function ActivityInner() {
     const load = async () => {
       setLoading(true);
       try {
-        const res = await fetch("/api/transactions?limit=50");
+        const res = await fetch(`/api/transactions?limit=${PAGE_SIZE}&offset=0`);
         const json = await res.json();
         if (res.ok) {
           setTransactions(json.data.transactions);
+          setTotal(json.data.total ?? json.data.transactions.length);
         } else {
           setError(json.error || "Couldn't load activity.");
         }
@@ -60,6 +65,26 @@ function ActivityInner() {
     };
     load();
   }, []);
+
+  const loadMore = async () => {
+    setLoadingMore(true);
+    try {
+      const res = await fetch(`/api/transactions?limit=${PAGE_SIZE}&offset=${transactions.length}`);
+      const json = await res.json();
+      if (res.ok) {
+        setTransactions((prev) => [...prev, ...json.data.transactions]);
+        setTotal(json.data.total ?? total);
+      } else {
+        setError(json.error || "Couldn't load more activity.");
+      }
+    } catch {
+      setError("Couldn't reach the server.");
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const hasMore = transactions.length < total;
 
   const byStatus = filter === "all" ? transactions : transactions.filter((t) => t.status === filter);
   const filtered = q
@@ -171,6 +196,19 @@ function ActivityInner() {
             </div>
           )}
         </div>
+
+        {!loading && hasMore && (
+          <div className="flex justify-center pt-2">
+            <button
+              type="button"
+              onClick={loadMore}
+              disabled={loadingMore}
+              className="text-xs font-semibold text-primary hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loadingMore ? "Loading…" : `Load more (${transactions.length} of ${total})`}
+            </button>
+          </div>
+        )}
       </div>
     </main>
   );
