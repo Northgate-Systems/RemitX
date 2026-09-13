@@ -7,6 +7,7 @@ import {
   ListFilter,
   Download,
   BadgeCheck,
+  FilterX,
 } from "lucide-react";
 
 interface AnchorRow {
@@ -24,14 +25,26 @@ interface AnchorRow {
 
 const COUNTRIES = ["All", "Nigeria", "Philippines", "Mexico", "Argentina", "European Union"];
 const ASSETS = ["USDC", "EURC", "XLM"];
+const DEFAULT_COUNTRY = "All";
+const DEFAULT_ASSET_CODE = "USDC";
+const DEFAULT_AMOUNT = "1000";
 
 export default function AnchorsPage() {
   const [anchors, setAnchors] = useState<AnchorRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [country, setCountry] = useState("All");
-  const [assetCode, setAssetCode] = useState("USDC");
-  const [amount, setAmount] = useState("1000");
+  const [country, setCountry] = useState(DEFAULT_COUNTRY);
+  const [assetCode, setAssetCode] = useState(DEFAULT_ASSET_CODE);
+  const [amount, setAmount] = useState(DEFAULT_AMOUNT);
   const [error, setError] = useState<string | null>(null);
+
+  const isFiltered =
+    country !== DEFAULT_COUNTRY || assetCode !== DEFAULT_ASSET_CODE || amount !== DEFAULT_AMOUNT;
+
+  const resetFilters = () => {
+    setCountry(DEFAULT_COUNTRY);
+    setAssetCode(DEFAULT_ASSET_CODE);
+    setAmount(DEFAULT_AMOUNT);
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -166,7 +179,25 @@ export default function AnchorsPage() {
                 {loading ? (
                   <tr><td colSpan={4} className="py-8 text-center text-sm text-gray-400">Loading anchors…</td></tr>
                 ) : anchors.length === 0 ? (
-                  <tr><td colSpan={4} className="py-8 text-center text-sm text-gray-400">No anchors match these filters.</td></tr>
+                  <tr>
+                    <td colSpan={4} className="py-10 px-4">
+                      <div className="flex flex-col items-center gap-2 text-center">
+                        <FilterX size={28} className="text-gray-300" />
+                        <p className="text-sm font-semibold text-gray-600">No anchors found</p>
+                        <p className="text-xs text-gray-400 max-w-xs">
+                          No anchors match these filters. Try a different country, asset, or amount.
+                        </p>
+                        {isFiltered && (
+                          <button
+                            onClick={resetFilters}
+                            className="mt-1 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-all active:scale-95"
+                          >
+                            Reset filters
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
                 ) : (
                   anchors.map((a) => (
                     <tr key={a.id} className="hover:bg-gray-50 transition-all duration-200">
