@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ChevronRight,
@@ -34,6 +34,7 @@ const STATUS_STYLE: Record<Transaction["status"], string> = {
 const FILTERS: Array<"all" | Transaction["status"]> = ["all", "pending", "validating", "confirmed", "failed"];
 
 function ActivityInner() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const q = searchParams.get("q")?.toLowerCase() ?? "";
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -109,14 +110,38 @@ function ActivityInner() {
             <div className="p-4 space-y-3">
               {[0, 1, 2, 3].map((i) => <div key={i} className="h-14 bg-gray-100 rounded animate-pulse" />)}
             </div>
+          ) : transactions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+              <div className="w-14 h-14 rounded-full bg-indigo-50 flex items-center justify-center">
+                <History size={26} className="text-indigo-300" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">No transactions yet</p>
+                <p className="text-xs text-gray-400 mt-0.5">Your sends will show up here once you make your first transfer.</p>
+              </div>
+              <Link
+                href="/send"
+                className="mt-1 text-xs font-semibold text-white bg-primary px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+              >
+                Send your first transfer
+              </Link>
+            </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-2 text-center">
-              <History size={32} className="text-gray-300" />
+              <Search size={32} className="text-gray-300" />
               <p className="text-sm font-medium text-gray-600">
-                {filter === "all" ? "No transactions yet" : `No ${filter} transactions`}
+                No transactions match {q ? "your search" : "this filter"}
               </p>
-              <p className="text-xs text-gray-400 mb-3">Your sends will show up here.</p>
-              <Link href="/send" className="text-xs font-semibold text-primary hover:underline">Send money →</Link>
+              <p className="text-xs text-gray-400 mb-3">Try a different {q ? "search term" : "status filter"}.</p>
+              <button
+                onClick={() => {
+                  setFilter("all");
+                  if (q) router.push("/activity");
+                }}
+                className="text-xs font-semibold text-primary hover:underline"
+              >
+                Clear {q ? "search" : "filter"}
+              </button>
             </div>
           ) : (
             <div className="overflow-x-auto">
