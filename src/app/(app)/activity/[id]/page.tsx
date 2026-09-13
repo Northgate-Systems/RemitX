@@ -13,6 +13,7 @@ import {
   RotateCcw,
   Clock,
 } from "lucide-react";
+import { toast } from "@/lib/toast-store";
 
 interface TransactionDetail {
   id: string;
@@ -84,6 +85,7 @@ export default function TransactionDetailPage() {
     if (!tx?.stellarTxHash) return;
     navigator.clipboard.writeText(tx.stellarTxHash);
     setCopied(true);
+    toast.success("Transaction hash copied to clipboard");
     setTimeout(() => setCopied(false), 1500);
   };
 

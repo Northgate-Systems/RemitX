@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import CookieBanner from "@/components/CookieBanner";
 import Analytics from "@/components/Analytics";
+import ToastViewport from "@/components/ToastViewport";
 
 export const metadata: Metadata = {
   title: {
@@ -77,6 +78,7 @@ export default function RootLayout({
         {children}
         <CookieBanner />
         <Analytics />
+        <ToastViewport />
       </body>
     </html>
   );
