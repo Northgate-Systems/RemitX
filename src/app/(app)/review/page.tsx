@@ -14,6 +14,7 @@ import {
   Check,
 } from "lucide-react";
 import { checkStellarPublicKey } from "@/lib/stellar-address";
+import { toast } from "@/lib/toast-store";
 
 interface StoredTx {
   transactionId: string;
@@ -77,6 +78,7 @@ function ReviewInner() {
     if (!hash) return;
     navigator.clipboard.writeText(hash);
     setCopied(true);
+    toast.success("Transaction hash copied to clipboard");
     setTimeout(() => setCopied(false), 1500);
   };
 

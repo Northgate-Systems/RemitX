@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRightLeft, AtSign, ArrowRight, Info, RefreshCw, AlertCircle, CheckCircle2 } from "lucide-react";
 import { checkStellarPublicKey, STELLAR_PUBLIC_KEY_LENGTH } from "@/lib/stellar-address";
+import { toast } from "@/lib/toast-store";
 
 const ASSETS = ["XLM", "USDC", "USD", "NGN", "PHP", "GBP"];
 const QUOTE_REFRESH_MS = 15_000;
@@ -110,12 +111,17 @@ export default function SendMoneyPage() {
             recipientAddress: json.data.recipientAddress,
           })
         );
+        toast.success("Transfer details submitted — review to confirm.");
         router.push(`/review?transactionId=${json.data.transactionId}`);
       } else {
-        setError(json.error || "Couldn't start this transfer.");
+        const message = json.error || "Couldn't start this transfer.";
+        setError(message);
+        toast.error(message);
       }
     } catch {
-      setError("Couldn't reach the server. Try again.");
+      const message = "Couldn't reach the server. Try again.";
+      setError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
