@@ -13,6 +13,7 @@ export default function SendMoneyPage() {
   const [fromAsset, setFromAsset] = useState("USD");
   const [toAsset, setToAsset] = useState("NGN");
   const [amount, setAmount] = useState("100.00");
+  const [amountTouched, setAmountTouched] = useState(false);
   const [recipient, setRecipient] = useState("");
   const [recipientTouched, setRecipientTouched] = useState(false);
   const [rate, setRate] = useState<string | null>(null);
@@ -68,6 +69,13 @@ export default function SendMoneyPage() {
 
   const numericAmount = parseFloat(amount) || 0;
   const converted = rate ? numericAmount * parseFloat(rate) : 0;
+
+  // Validate amount: must be a positive number
+  const amountError =
+    amount.trim().length > 0 && (isNaN(numericAmount) || numericAmount <= 0)
+      ? "Amount must be greater than 0"
+      : null;
+  const showAmountError = amountError && (amountTouched || amount.trim().length > 0);
 
   // Checksum-validate the recipient as it's typed. Funds sent on Stellar are
   // irreversible, so a typo has to be caught here rather than by Horizon.
@@ -140,7 +148,11 @@ export default function SendMoneyPage() {
               <div className="space-y-5">
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-gray-500 ml-1">You Send</label>
-                  <div className="flex items-stretch border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-primary/20 transition-all shadow-sm">
+                  <div className={`flex items-stretch border rounded-xl overflow-hidden transition-all shadow-sm ${
+                    showAmountError
+                      ? "border-red-300 focus-within:ring-2 focus-within:ring-red-200"
+                      : "border-gray-200 focus-within:ring-2 focus-within:ring-primary/20"
+                  }`}>
                     <input
                       className="flex-1 px-4 py-3.5 border-none text-lg font-bold focus:ring-0 outline-none"
                       placeholder="0.00"
@@ -148,6 +160,9 @@ export default function SendMoneyPage() {
                       min="0"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
+                      onBlur={() => setAmountTouched(true)}
+                      aria-invalid={!!showAmountError}
+                      aria-describedby="amount-status"
                     />
                     <select
                       value={fromAsset}
@@ -157,6 +172,14 @@ export default function SendMoneyPage() {
                       {ASSETS.map((a) => <option key={a} value={a}>{a}</option>)}
                     </select>
                   </div>
+                  <p id="amount-status" role="status" aria-live="polite" className="min-h-[1rem] ml-1">
+                    {showAmountError && (
+                      <span className="text-[11px] text-red-600 flex items-start gap-1 leading-relaxed">
+                        <AlertCircle size={12} className="shrink-0 mt-0.5" />
+                        {amountError}
+                      </span>
+                    )}
+                  </p>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-gray-500 ml-1">Recipient Gets</label>
@@ -261,14 +284,33 @@ export default function SendMoneyPage() {
                   <Info size={14} className="shrink-0 mt-0.5" />
                   <p>Verify the Stellar address carefully. Funds sent cannot be recovered.</p>
                 </div>
-                <button
-                  onClick={handleContinue}
-                  disabled={!canContinue || submitting}
-                  className="w-full bg-emerald-400 text-emerald-900 font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg disabled:opacity-50 disabled:hover:scale-100"
-                >
-                  {submitting ? "Preparing transaction…" : "Continue to Review"}
-                  {!submitting && <ArrowRight size={18} />}
-                </button>
+                <div className="space-y-2">
+                  <button
+                    onClick={handleContinue}
+                    disabled={!canContinue || submitting}
+                    title={
+                      submitting ? "Preparing transaction…"
+                      : !rate || rateLoading ? "Fetching exchange rate…"
+                      : showAmountError ? "Enter a valid amount"
+                      : !recipientCheck.valid ? "Enter a valid recipient address"
+                      : numericAmount <= 0 ? "Amount must be greater than 0"
+                      : ""
+                    }
+                    className="w-full bg-emerald-400 text-emerald-900 font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg disabled:opacity-50 disabled:hover:scale-100"
+                  >
+                    {submitting ? "Preparing transaction…" : "Continue to Review"}
+                    {!submitting && <ArrowRight size={18} />}
+                  </button>
+                  {!canContinue && !submitting && (
+                    <p className="text-[11px] text-gray-500 text-center">
+                      {!rate || rateLoading ? "Fetching exchange rate…"
+                      : showAmountError ? "Enter a valid amount"
+                      : !recipientCheck.valid && trimmedRecipient.length > 0 ? "Enter a valid recipient address"
+                      : numericAmount <= 0 ? "Enter an amount greater than 0"
+                      : ""}
+                    </p>
+                  )}
+                </div>
               </div>
             </section>
           </div>
