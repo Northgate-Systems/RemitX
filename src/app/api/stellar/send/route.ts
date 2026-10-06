@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     const parsed = stellarSendSchema.safeParse(body);
 
     if (!parsed.success) {
-      return errorResponse(parsed.error.errors[0].message, 400);
+      return errorResponse(parsed.error.issues[0]?.message ?? "Invalid send request", 400);
     }
 
     const { fromAsset, toAsset, amount, recipientAddress } = parsed.data;

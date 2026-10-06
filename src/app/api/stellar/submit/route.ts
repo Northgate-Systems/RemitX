@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     const parsed = stellarSubmitSchema.safeParse(body);
 
     if (!parsed.success) {
-      return errorResponse(parsed.error.errors[0].message, 400);
+      return errorResponse(parsed.error.issues[0]?.message ?? "Invalid submission", 400);
     }
 
     const { signedXdr, transactionId } = parsed.data;

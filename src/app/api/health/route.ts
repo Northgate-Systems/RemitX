@@ -1,5 +1,5 @@
-import { db } from "@/lib/db";
 import { HORIZON_URL } from "@/lib/stellar";
+import { supabase } from "@/lib/supabase";
 import { successResponse } from "@/lib/api-response";
 
 // Fail the Stellar reachability check fast instead of hanging on a
@@ -9,8 +9,10 @@ const STELLAR_CHECK_TIMEOUT_MS = 5000;
 
 async function checkDatabase(): Promise<boolean> {
   try {
-    await db.$queryRaw`SELECT 1`;
-    return true;
+    // A lightweight read against a real table. `.limit(0)` (HEAD-style)
+    // avoids pulling rows while still proving connectivity + credentials.
+    const { error } = await supabase.from("users").select("id").limit(0);
+    return !error;
   } catch {
     return false;
   }

@@ -8,7 +8,9 @@ import crypto from "crypto";
  */
 
 // ── In-memory rate limiter (per-process) ────────────────────────────────
-// For production with multiple instances, replace with Redis/Upstash.
+// NOTE: on Vercel / serverless each instance (and each cold start) gets its
+// own Map, so this is best-effort burst protection, not a global counter.
+// That's acceptable for abuse-throttling; don't rely on it for correctness.
 const rateBuckets = new Map<string, { count: number; resetAt: number }>();
 
 export function rateLimit(

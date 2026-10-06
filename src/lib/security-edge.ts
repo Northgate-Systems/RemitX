@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 /**
  * Edge-runtime-safe security utilities.
  * These functions do NOT use Node.js `crypto` and can be safely
- * imported by middleware (which runs in the Edge Runtime).
+ * imported by the proxy (which runs in the Edge Runtime).
  */
 
 export function applySecurityHeaders(response: NextResponse): NextResponse {

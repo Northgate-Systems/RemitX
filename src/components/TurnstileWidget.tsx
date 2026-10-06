@@ -35,8 +35,14 @@ export default function TurnstileWidget({ onVerify, onExpire }: TurnstileWidgetP
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // No site key configured: in production the server now fails closed
+    // (verifyTurnstileToken returns success:false), so don't hand the form a
+    // fake token that could never verify. Show the config notice instead and
+    // let the user retry once keys are set.
     if (!SITE_KEY) {
-      onVerify("dev-skip-no-site-key");
+      if (process.env.NODE_ENV !== "production") {
+        onVerify("dev-skip-no-site-key");
+      }
       return;
     }
 

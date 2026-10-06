@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     const parsed = loginSchema.safeParse(body);
 
     if (!parsed.success) {
-      return errorResponse(parsed.error.errors[0].message, 400);
+      return errorResponse(parsed.error.issues[0]?.message ?? "Invalid email or password", 400);
     }
 
     const { email, password, turnstileToken } = parsed.data;

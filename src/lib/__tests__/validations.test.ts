@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { isValidStellarPublicKey } from "@/lib/stellar-address";
 import {
   registerSchema,
   loginSchema,
@@ -101,7 +102,14 @@ describe("loginSchema", () => {
 });
 
 describe("stellarSendSchema", () => {
-  const VALID_RECIPIENT = "G" + "A".repeat(55);
+  // A well-known valid testnet address (same one stellar-address.test.ts
+  // pins). Must be checksum-valid — a shape-only string like "G"+"A"*55
+  // passes the regex but fails isValidStellarPublicKey's checksum refine.
+  const VALID_RECIPIENT = "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN7";
+
+  it("uses a fixture that the checksum validator itself accepts", () => {
+    expect(isValidStellarPublicKey(VALID_RECIPIENT)).toBe(true);
+  });
 
   it("accepts a well-formed send request", () => {
     const result = stellarSendSchema.safeParse({
