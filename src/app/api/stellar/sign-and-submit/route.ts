@@ -16,6 +16,9 @@ import type { Transaction } from "@/lib/types";
 // wallet extension for signing before going to production.
 // ---------------------------------------------------------------------------
 
+// See note in src/app/api/health/route.ts — API routes must not pre-render.
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();

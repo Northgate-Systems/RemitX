@@ -4,6 +4,9 @@ import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-
 import { transactionIdSchema } from "@/lib/validations";
 import type { Transaction } from "@/lib/types";
 
+// See note in src/app/api/health/route.ts — API routes must not pre-render.
+export const dynamic = "force-dynamic";
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }

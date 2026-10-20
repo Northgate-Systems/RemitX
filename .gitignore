@@ -1,6 +1,5 @@
 # Dependencies
 node_modules/
-package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
@@ -11,6 +10,10 @@ out/
 # Build output
 dist/
 build/
+build-out.txt
+build.log
+*.bat
+*.ps1
 
 # Environment variables
 .env
@@ -22,13 +25,15 @@ build/
 .env.production
 .env.production.local
 
-
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+
+# Agent worktree snapshots (local-only duplicates, never commit)
+.kilo/
 
 # OS
 .DS_Store

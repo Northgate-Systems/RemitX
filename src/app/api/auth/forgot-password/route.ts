@@ -3,6 +3,9 @@ import { supabase } from "@/lib/supabase";
 import { successResponse, errorResponse } from "@/lib/api-response";
 import { generateResetToken, rateLimit, sanitizeEmail, logSecurityEvent } from "@/lib/security";
 
+// See note in src/app/api/health/route.ts — API routes must not pre-render.
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   try {
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";

@@ -15,6 +15,9 @@ import {
   readBodyWithLimit,
 } from "@/lib/security";
 
+// See note in src/app/api/health/route.ts — API routes must not pre-render.
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   try {
     // Rate limit by IP

@@ -27,6 +27,8 @@ export type AggregateUser = {
 export type UserMinAggregateOutputType = {
   id: string | null
   email: string | null
+  firstName: string | null
+  lastName: string | null
   passwordHash: string | null
   stellarPublicKey: string | null
   kycStatus: $Enums.KycStatus | null
@@ -37,6 +39,8 @@ export type UserMinAggregateOutputType = {
 export type UserMaxAggregateOutputType = {
   id: string | null
   email: string | null
+  firstName: string | null
+  lastName: string | null
   passwordHash: string | null
   stellarPublicKey: string | null
   kycStatus: $Enums.KycStatus | null
@@ -47,6 +51,8 @@ export type UserMaxAggregateOutputType = {
 export type UserCountAggregateOutputType = {
   id: number
   email: number
+  firstName: number
+  lastName: number
   passwordHash: number
   stellarPublicKey: number
   kycStatus: number
@@ -59,6 +65,8 @@ export type UserCountAggregateOutputType = {
 export type UserMinAggregateInputType = {
   id?: true
   email?: true
+  firstName?: true
+  lastName?: true
   passwordHash?: true
   stellarPublicKey?: true
   kycStatus?: true
@@ -69,6 +77,8 @@ export type UserMinAggregateInputType = {
 export type UserMaxAggregateInputType = {
   id?: true
   email?: true
+  firstName?: true
+  lastName?: true
   passwordHash?: true
   stellarPublicKey?: true
   kycStatus?: true
@@ -79,6 +89,8 @@ export type UserMaxAggregateInputType = {
 export type UserCountAggregateInputType = {
   id?: true
   email?: true
+  firstName?: true
+  lastName?: true
   passwordHash?: true
   stellarPublicKey?: true
   kycStatus?: true
@@ -162,6 +174,8 @@ export type UserGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
 export type UserGroupByOutputType = {
   id: string
   email: string
+  firstName: string
+  lastName: string
   passwordHash: string
   stellarPublicKey: string | null
   kycStatus: $Enums.KycStatus
@@ -193,6 +207,8 @@ export type UserWhereInput = {
   NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   id?: Prisma.StringFilter<"User"> | string
   email?: Prisma.StringFilter<"User"> | string
+  firstName?: Prisma.StringFilter<"User"> | string
+  lastName?: Prisma.StringFilter<"User"> | string
   passwordHash?: Prisma.StringFilter<"User"> | string
   stellarPublicKey?: Prisma.StringNullableFilter<"User"> | string | null
   kycStatus?: Prisma.EnumKycStatusFilter<"User"> | $Enums.KycStatus
@@ -205,6 +221,8 @@ export type UserWhereInput = {
 export type UserOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   email?: Prisma.SortOrder
+  firstName?: Prisma.SortOrder
+  lastName?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
   stellarPublicKey?: Prisma.SortOrderInput | Prisma.SortOrder
   kycStatus?: Prisma.SortOrder
@@ -221,6 +239,8 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   AND?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
   OR?: Prisma.UserWhereInput[]
   NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[]
+  firstName?: Prisma.StringFilter<"User"> | string
+  lastName?: Prisma.StringFilter<"User"> | string
   passwordHash?: Prisma.StringFilter<"User"> | string
   kycStatus?: Prisma.EnumKycStatusFilter<"User"> | $Enums.KycStatus
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
@@ -232,6 +252,8 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
 export type UserOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   email?: Prisma.SortOrder
+  firstName?: Prisma.SortOrder
+  lastName?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
   stellarPublicKey?: Prisma.SortOrderInput | Prisma.SortOrder
   kycStatus?: Prisma.SortOrder
@@ -248,6 +270,8 @@ export type UserScalarWhereWithAggregatesInput = {
   NOT?: Prisma.UserScalarWhereWithAggregatesInput | Prisma.UserScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"User"> | string
   email?: Prisma.StringWithAggregatesFilter<"User"> | string
+  firstName?: Prisma.StringWithAggregatesFilter<"User"> | string
+  lastName?: Prisma.StringWithAggregatesFilter<"User"> | string
   passwordHash?: Prisma.StringWithAggregatesFilter<"User"> | string
   stellarPublicKey?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   kycStatus?: Prisma.EnumKycStatusWithAggregatesFilter<"User"> | $Enums.KycStatus
@@ -286,6 +310,8 @@ export type UserUncheckedCreateInput = {
 export type UserUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   stellarPublicKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kycStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus
@@ -298,6 +324,8 @@ export type UserUpdateInput = {
 export type UserUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   stellarPublicKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kycStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus
@@ -310,6 +338,8 @@ export type UserUncheckedUpdateInput = {
 export type UserCreateManyInput = {
   id?: string
   email: string
+  firstName: string
+  lastName: string
   passwordHash: string
   stellarPublicKey?: string | null
   kycStatus?: $Enums.KycStatus
@@ -320,6 +350,8 @@ export type UserCreateManyInput = {
 export type UserUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   stellarPublicKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kycStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus
@@ -330,6 +362,8 @@ export type UserUpdateManyMutationInput = {
 export type UserUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   stellarPublicKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kycStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus
@@ -340,6 +374,8 @@ export type UserUncheckedUpdateManyInput = {
 export type UserCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   email?: Prisma.SortOrder
+  firstName?: Prisma.SortOrder
+  lastName?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
   stellarPublicKey?: Prisma.SortOrder
   kycStatus?: Prisma.SortOrder
@@ -350,6 +386,8 @@ export type UserCountOrderByAggregateInput = {
 export type UserMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   email?: Prisma.SortOrder
+  firstName?: Prisma.SortOrder
+  lastName?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
   stellarPublicKey?: Prisma.SortOrder
   kycStatus?: Prisma.SortOrder
@@ -360,6 +398,8 @@ export type UserMaxOrderByAggregateInput = {
 export type UserMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   email?: Prisma.SortOrder
+  firstName?: Prisma.SortOrder
+  lastName?: Prisma.SortOrder
   passwordHash?: Prisma.SortOrder
   stellarPublicKey?: Prisma.SortOrder
   kycStatus?: Prisma.SortOrder
@@ -419,6 +459,8 @@ export type UserUpdateOneRequiredWithoutEscrowsNestedInput = {
 export type UserCreateWithoutTransactionsInput = {
   id?: string
   email: string
+  firstName: string
+  lastName: string
   passwordHash: string
   stellarPublicKey?: string | null
   kycStatus?: $Enums.KycStatus
@@ -430,6 +472,8 @@ export type UserCreateWithoutTransactionsInput = {
 export type UserUncheckedCreateWithoutTransactionsInput = {
   id?: string
   email: string
+  firstName: string
+  lastName: string
   passwordHash: string
   stellarPublicKey?: string | null
   kycStatus?: $Enums.KycStatus
@@ -457,6 +501,8 @@ export type UserUpdateToOneWithWhereWithoutTransactionsInput = {
 export type UserUpdateWithoutTransactionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   stellarPublicKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kycStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus
@@ -468,6 +514,8 @@ export type UserUpdateWithoutTransactionsInput = {
 export type UserUncheckedUpdateWithoutTransactionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   stellarPublicKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kycStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus
@@ -479,6 +527,8 @@ export type UserUncheckedUpdateWithoutTransactionsInput = {
 export type UserCreateWithoutEscrowsInput = {
   id?: string
   email: string
+  firstName: string
+  lastName: string
   passwordHash: string
   stellarPublicKey?: string | null
   kycStatus?: $Enums.KycStatus
@@ -490,6 +540,8 @@ export type UserCreateWithoutEscrowsInput = {
 export type UserUncheckedCreateWithoutEscrowsInput = {
   id?: string
   email: string
+  firstName: string
+  lastName: string
   passwordHash: string
   stellarPublicKey?: string | null
   kycStatus?: $Enums.KycStatus
@@ -517,6 +569,8 @@ export type UserUpdateToOneWithWhereWithoutEscrowsInput = {
 export type UserUpdateWithoutEscrowsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   stellarPublicKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kycStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus
@@ -528,6 +582,8 @@ export type UserUpdateWithoutEscrowsInput = {
 export type UserUncheckedUpdateWithoutEscrowsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  firstName?: Prisma.StringFieldUpdateOperationsInput | string
+  lastName?: Prisma.StringFieldUpdateOperationsInput | string
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   stellarPublicKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kycStatus?: Prisma.EnumKycStatusFieldUpdateOperationsInput | $Enums.KycStatus
@@ -579,6 +635,8 @@ export type UserCountOutputTypeCountEscrowsArgs<ExtArgs extends runtime.Types.Ex
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   email?: boolean
+  firstName?: boolean
+  lastName?: boolean
   passwordHash?: boolean
   stellarPublicKey?: boolean
   kycStatus?: boolean
@@ -592,6 +650,8 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
 export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   email?: boolean
+  firstName?: boolean
+  lastName?: boolean
   passwordHash?: boolean
   stellarPublicKey?: boolean
   kycStatus?: boolean
@@ -602,6 +662,8 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
 export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   email?: boolean
+  firstName?: boolean
+  lastName?: boolean
   passwordHash?: boolean
   stellarPublicKey?: boolean
   kycStatus?: boolean
@@ -612,6 +674,8 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
 export type UserSelectScalar = {
   id?: boolean
   email?: boolean
+  firstName?: boolean
+  lastName?: boolean
   passwordHash?: boolean
   stellarPublicKey?: boolean
   kycStatus?: boolean
@@ -619,7 +683,7 @@ export type UserSelectScalar = {
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "passwordHash" | "stellarPublicKey" | "kycStatus" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "firstName" | "lastName" | "passwordHash" | "stellarPublicKey" | "kycStatus" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   transactions?: boolean | Prisma.User$transactionsArgs<ExtArgs>
   escrows?: boolean | Prisma.User$escrowsArgs<ExtArgs>
@@ -1071,6 +1135,8 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
 export interface UserFieldRefs {
   readonly id: Prisma.FieldRef<"User", 'String'>
   readonly email: Prisma.FieldRef<"User", 'String'>
+  readonly firstName: Prisma.FieldRef<"User", 'String'>
+  readonly lastName: Prisma.FieldRef<"User", 'String'>
   readonly passwordHash: Prisma.FieldRef<"User", 'String'>
   readonly stellarPublicKey: Prisma.FieldRef<"User", 'String'>
   readonly kycStatus: Prisma.FieldRef<"User", 'KycStatus'>

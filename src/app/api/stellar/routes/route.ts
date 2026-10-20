@@ -15,6 +15,10 @@ function resolvePathAsset(code: string): Asset {
 /** Real Stellar path-finding via Horizon's /paths/strict-send - returns the
  * actual on-chain routes available right now for a given send amount, no
  * fabricated providers or fee tables. */
+
+// See note in src/app/api/health/route.ts — API routes must not pre-render.
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();

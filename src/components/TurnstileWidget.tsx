@@ -62,7 +62,7 @@ export default function TurnstileWidget({ onVerify, onExpire }: TurnstileWidgetP
           theme: "light",
         });
         setError(null);
-      } catch (e) {
+      } catch {
         setError("Could not load the verification widget. Please refresh the page.");
       }
     }

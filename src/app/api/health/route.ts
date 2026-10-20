@@ -2,6 +2,12 @@ import { HORIZON_URL } from "@/lib/stellar";
 import { supabase } from "@/lib/supabase";
 import { successResponse } from "@/lib/api-response";
 
+// Every API route in this app reads cookies / request data, so none of them
+// can be pre-rendered at build time. Without this, `next build` tries to
+// statically collect their data (hitting Supabase/Horizon without env vars)
+// and the build stalls or fails on Vercel.
+export const dynamic = "force-dynamic";
+
 // Fail the Stellar reachability check fast instead of hanging on a
 // half-open connection -- a slow/unreachable Horizon shouldn't make an
 // uptime monitor's health check itself time out.

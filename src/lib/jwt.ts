@@ -10,20 +10,20 @@
 const JWT_SECRET =
   process.env.JWT_SECRET || "dev-jwt-secret-change-in-production-min-32-chars-long";
 
-function base64UrlDecode(input: string): Uint8Array {
+function base64UrlToBytes(input: string): Uint8Array<ArrayBuffer> {
   // Normalise base64url -> base64, then decode without relying on Buffer
   // (Buffer does not exist in the Edge runtime).
   const base64 = input.replace(/-/g, "+").replace(/_/g, "/");
   const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
   const binary = atob(padded);
-  const bytes = new Uint8Array(binary.length);
+  const bytes = new Uint8Array(new ArrayBuffer(binary.length));
   for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i);
   }
   return bytes;
 }
 
-function textToBytes(text: string): Uint8Array {
+function textToBytes(text: string): Uint8Array<ArrayBuffer> {
   return new TextEncoder().encode(text);
 }
 
@@ -45,7 +45,7 @@ export async function verifyToken(token: string): Promise<SessionPayload | null>
     const [encodedHeader, encodedPayload, encodedSignature] = parts;
 
     const signingInput = `${encodedHeader}.${encodedPayload}`;
-    const signatureBytes = base64UrlDecode(encodedSignature);
+    const signatureBytes = base64UrlToBytes(encodedSignature);
 
     const key = await globalThis.crypto.subtle.importKey(
       "raw",
@@ -58,12 +58,12 @@ export async function verifyToken(token: string): Promise<SessionPayload | null>
     const valid = await globalThis.crypto.subtle.verify(
       "HMAC",
       key,
-      signatureBytes as unknown as BufferSource,
-      textToBytes(signingInput) as unknown as BufferSource
+      signatureBytes,
+      textToBytes(signingInput)
     );
     if (!valid) return null;
 
-    const payloadJson = new TextDecoder().decode(base64UrlDecode(encodedPayload));
+    const payloadJson = new TextDecoder().decode(base64UrlToBytes(encodedPayload));
     const payload = JSON.parse(payloadJson) as {
       sub?: unknown;
       email?: unknown;
