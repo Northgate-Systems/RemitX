@@ -1,0 +1,4 @@
+# Auto-generated Prisma client (produced by `prisma generate`) — excluded from
+# GitHub language statistics. This is machine-generated boilerplate, not hand-written
+# TypeScript, so it should not count toward the project's language breakdown.
+src/generated/** linguist-generated=true

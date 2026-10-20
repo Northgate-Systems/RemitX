@@ -1,0 +1,28 @@
+[package]
+name = "remitx-core"
+version = "0.1.0"
+edition = "2021"
+description = "RemitX core business logic, ported from TypeScript and compiled to native + WebAssembly"
+license = "MIT"
+
+# `rlib` so `cargo test` works on the host; `cdylib` so the crate can be
+# consumed as WebAssembly from the Next.js frontend via wasm-bindgen.
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Optional: only needed when building the WebAssembly bundle for the browser.
+# The host-side unit tests build without it, keeping `cargo test` fast.
+wasm-bindgen = { version = "0.2", optional = true }
+
+[features]
+default = []
+wasm = ["dep:wasm-bindgen"]
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
