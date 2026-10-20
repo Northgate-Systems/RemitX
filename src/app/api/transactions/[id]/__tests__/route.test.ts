@@ -41,13 +41,21 @@ function makeParams(id: string) {
 }
 
 function fakeUser(id = OWNER_ID) {
+  // Must satisfy SafeUser (Omit<User, "passwordHash">) — getCurrentUser's
+  // mocked return type is checked by tsc, so every required field is needed.
   return {
     id,
     email: `${id}@example.com`,
     firstName: "Test",
     lastName: "User",
+    stellarPublicKey: null,
+    kycStatus: "pending",
+    sessionVersion: 1,
+    failedLoginAttempts: 0,
+    lockedUntil: null,
     createdAt: new Date().toISOString(),
-  };
+    updatedAt: new Date().toISOString(),
+  } as const;
 }
 
 function fakeTx(userId = OWNER_ID) {

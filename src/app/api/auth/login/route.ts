@@ -15,6 +15,9 @@ import {
   readBodyWithLimit,
 } from "@/lib/security";
 
+// See note in src/app/api/health/route.ts — API routes must not pre-render.
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   try {
     // Rate limit by IP
@@ -29,7 +32,7 @@ export async function POST(request: NextRequest) {
     const parsed = loginSchema.safeParse(body);
 
     if (!parsed.success) {
-      return errorResponse(parsed.error.errors[0].message, 400);
+      return errorResponse(parsed.error.issues[0]?.message ?? "Invalid email or password", 400);
     }
 
     const { email, password, turnstileToken } = parsed.data;

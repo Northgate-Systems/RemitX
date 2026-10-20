@@ -9,6 +9,9 @@ import {
   readBodyWithLimit,
 } from "@/lib/security";
 
+// See note in src/app/api/health/route.ts — API routes must not pre-render.
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   try {
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
@@ -32,6 +35,15 @@ export async function POST(request: NextRequest) {
       return errorResponse("Reset link is invalid or has expired. Please request a new one.", 400);
     }
 
+    // Fetch existing user to increment session version
+    const { data: existingUser } = await supabase
+      .from("users")
+      .select("sessionVersion")
+      .eq("id", resetData.userId)
+      .maybeSingle();
+
+    const nextSessionVersion = ((existingUser as { sessionVersion?: number } | null)?.sessionVersion ?? 1) + 1;
+
     // Hash the new password
     const passwordHash = await hashPassword(newPassword);
 
@@ -40,7 +52,7 @@ export async function POST(request: NextRequest) {
       .from("users")
       .update({
         passwordHash,
-        sessionVersion: 1, // Reset to 1 - all old sessions invalidated
+        sessionVersion: nextSessionVersion,
         failedLoginAttempts: 0,
         lockedUntil: null,
       })

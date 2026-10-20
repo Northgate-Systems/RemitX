@@ -1,7 +1,10 @@
 import { NextRequest } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/auth";
-import { successResponse, unauthorizedResponse } from "@/lib/api-response";
+import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
+
+// See note in src/app/api/health/route.ts — API routes must not pre-render.
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,7 +26,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error("Transactions fetch error:", error);
-      return unauthorizedResponse();
+      return errorResponse("Failed to fetch transactions", 500);
     }
 
     return successResponse({
@@ -34,6 +37,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (err) {
     console.error("Transactions fetch error:", err);
-    return unauthorizedResponse();
+    return errorResponse("Failed to fetch transactions", 500);
   }
 }

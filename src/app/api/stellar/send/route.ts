@@ -12,6 +12,9 @@ import {
   readBodyWithLimit,
 } from "@/lib/security";
 
+// See note in src/app/api/health/route.ts — API routes must not pre-render.
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
@@ -34,7 +37,7 @@ export async function POST(request: NextRequest) {
     const parsed = stellarSendSchema.safeParse(body);
 
     if (!parsed.success) {
-      return errorResponse(parsed.error.errors[0].message, 400);
+      return errorResponse(parsed.error.issues[0]?.message ?? "Invalid send request", 400);
     }
 
     const { fromAsset, toAsset, amount, recipientAddress } = parsed.data;

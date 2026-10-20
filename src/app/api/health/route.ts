@@ -1,6 +1,12 @@
-import { db } from "@/lib/db";
 import { HORIZON_URL } from "@/lib/stellar";
+import { supabase } from "@/lib/supabase";
 import { successResponse } from "@/lib/api-response";
+
+// Every API route in this app reads cookies / request data, so none of them
+// can be pre-rendered at build time. Without this, `next build` tries to
+// statically collect their data (hitting Supabase/Horizon without env vars)
+// and the build stalls or fails on Vercel.
+export const dynamic = "force-dynamic";
 
 // Fail the Stellar reachability check fast instead of hanging on a
 // half-open connection -- a slow/unreachable Horizon shouldn't make an
@@ -9,8 +15,10 @@ const STELLAR_CHECK_TIMEOUT_MS = 5000;
 
 async function checkDatabase(): Promise<boolean> {
   try {
-    await db.$queryRaw`SELECT 1`;
-    return true;
+    // A lightweight read against a real table. `.limit(0)` (HEAD-style)
+    // avoids pulling rows while still proving connectivity + credentials.
+    const { error } = await supabase.from("users").select("id").limit(0);
+    return !error;
   } catch {
     return false;
   }

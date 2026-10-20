@@ -3,6 +3,9 @@ import { getRate } from "@/lib/rates";
 import { rateQuerySchema } from "@/lib/validations";
 import { successResponse, errorResponse } from "@/lib/api-response";
 
+// See note in src/app/api/health/route.ts — API routes must not pre-render.
+export const dynamic = "force-dynamic";
+
 /**
  * Public, unauthenticated rate lookup - same market data as
  * /api/stellar/rate, just without requiring a session. Used by the landing

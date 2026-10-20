@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { getPasswordStrength, MIN_PASSWORD_SCORE } from "@/lib/password-strength";
+import { isValidStellarPublicKey } from "@/lib/stellar-address";
 
 export const registerSchema = z
   .object({

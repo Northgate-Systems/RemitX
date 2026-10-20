@@ -5,7 +5,7 @@ import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
 
 // Every page under the `(app)` route group sits behind the session check in
-// middleware.ts (it's not in `publicPaths`), so it must never be crawlable
+// src/proxy.ts (it's not in the public-path list), so it must never be crawlable
 // or listed in the sitemap. This walks the actual directory instead of a
 // hardcoded list so a future page added under `(app)/` fails this test
 // until robots.ts is updated too - that's exactly the drift that let

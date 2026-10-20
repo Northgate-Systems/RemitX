@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { rateLimit, logSecurityEvent } from "@/lib/security";
 
+// See note in src/app/api/health/route.ts — API routes must not pre-render.
+export const dynamic = "force-dynamic";
+
 export async function POST(request: Request) {
   try {
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";

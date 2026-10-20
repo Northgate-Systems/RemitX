@@ -4,6 +4,9 @@ import { getCurrentUser } from "@/lib/auth";
 import { server } from "@/lib/stellar";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
 
+// See note in src/app/api/health/route.ts — API routes must not pre-render.
+export const dynamic = "force-dynamic";
+
 /** Real Horizon liquidity pool reserves for a given asset code (top pool by
  * reserve size). Returns null data if the asset has no configured issuer or
  * no pool exists - never a fabricated figure. */

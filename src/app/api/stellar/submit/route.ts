@@ -6,6 +6,9 @@ import { stellarSubmitSchema } from "@/lib/validations";
 import { successResponse, errorResponse, unauthorizedResponse } from "@/lib/api-response";
 import type { Transaction } from "@/lib/types";
 
+// See note in src/app/api/health/route.ts — API routes must not pre-render.
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
@@ -17,7 +20,7 @@ export async function POST(request: NextRequest) {
     const parsed = stellarSubmitSchema.safeParse(body);
 
     if (!parsed.success) {
-      return errorResponse(parsed.error.errors[0].message, 400);
+      return errorResponse(parsed.error.issues[0]?.message ?? "Invalid submission", 400);
     }
 
     const { signedXdr, transactionId } = parsed.data;

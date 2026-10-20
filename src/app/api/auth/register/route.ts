@@ -13,6 +13,9 @@ import {
   readBodyWithLimit,
 } from "@/lib/security";
 
+// See note in src/app/api/health/route.ts — API routes must not pre-render.
+export const dynamic = "force-dynamic";
+
 export async function POST(request: NextRequest) {
   try {
     // Rate limit by IP
@@ -27,7 +30,7 @@ export async function POST(request: NextRequest) {
     const parsed = registerSchema.safeParse(body);
 
     if (!parsed.success) {
-      return errorResponse(parsed.error.errors[0].message, 400);
+      return errorResponse(parsed.error.issues[0]?.message ?? "Invalid registration data", 400);
     }
 
     const { firstName, lastName, email, password, turnstileToken } = parsed.data;
