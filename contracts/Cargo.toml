@@ -1,0 +1,38 @@
+[package]
+name = "remitx-contracts"
+version = "0.1.0"
+edition = "2021"
+description = "Shared types and utilities for RemitX Soroban contracts"
+license = "MIT"
+
+[lib]
+path = "src/lib.rs"
+
+[workspace]
+members = [
+    "escrow",
+    "exchange",
+    "staking",
+    "governance",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+
+[workspace.dependencies]
+soroban-sdk = "22.0.0"
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }
+
+[profile.release]
+opt-level = "z"
+overflow-checks = true
+lto = true
+debug = false
+codegen-units = 1
