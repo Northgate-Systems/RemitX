@@ -1,0 +1,5 @@
+# Rust / Soroban build output
+target/
+
+# Regenerable test snapshots (written by `cargo test`)
+test_snapshots/
