@@ -15,12 +15,18 @@
 //!   * [`rates`]     — exchange-rate resolution, caching, and fixed-point math
 //!   * [`security`]  — rate limiting, CSRF, sanitization, account lockout,
 //!   * [`types`]     — shared row/domain types mirroring the Supabase schema
+//!   * [`jwt`]       — HS256 JWT signing and verification (session tokens)
+//!   * [`auth`]      — bcrypt password hashing and verification
+//!   * [`turnstile`] — Cloudflare Turnstile verification decision logic
 
 pub mod anchors;
+pub mod auth;
+pub mod jwt;
 pub mod password;
 pub mod rates;
 pub mod security;
 pub mod strkey;
+pub mod turnstile;
 pub mod types;
 pub mod validation;
 
@@ -36,3 +42,5 @@ pub use validation::{
     validate_amount, validate_email, validate_password, validate_stellar_address, ValidationError,
     ValidationResult,
 };
+pub use jwt::{sign_token, verify_token, SessionPayload};
+pub use auth::{hash_password, verify_password, SALT_ROUNDS};

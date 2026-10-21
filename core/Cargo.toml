@@ -27,6 +27,9 @@ hex = "0.4"
 # Lightweight regex engine for prompt-injection detection (no std dependency).
 regex-lite = "0.1"
 
+# bcrypt password hashing, ported from src/lib/auth.ts (hashPassword/verifyPassword).
+bcrypt = "0.9"
+
 # Optional: only needed when building the WebAssembly bundle for the browser.
 # The host-side unit tests build without it, keeping `cargo test` fast.
 wasm-bindgen = { version = "0.2", optional = true }
