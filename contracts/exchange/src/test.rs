@@ -84,8 +84,9 @@ fn setup(env: &Env) -> TestHarness<'_> {
 
     let base = MockTokenClient::new(env, &env.register(MockToken, ()));
     let quote = MockTokenClient::new(env, &env.register(MockToken, ()));
+    let admin = Address::generate(env);
     let exchange =
-        ExchangeContractClient::new(env, &env.register(ExchangeContract, ()));
+        ExchangeContractClient::new(env, &env.register(ExchangeContract, (admin,)));
 
     let lp = Address::generate(env);
     let trader = Address::generate(env);

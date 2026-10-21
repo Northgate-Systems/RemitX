@@ -5,10 +5,17 @@
 //! - Rewards are paid from a pool funded by the admin (same staked token)
 //! - Principal can be withdrawn at any time; rewards accrue until claimed
 //! - Admin controls APR and reward-pool funding
+//! - Partial unstake with reward accrual
+//! - Reward claiming without unstaking
+//! - Emergency pause for admin
+//! - Slashing mechanism for malicious actors
+//! - Detailed position history for indexers
 
 #![no_std]
 
-use soroban_sdk::{contract, contracterror, contractimpl, panic_with_error, symbol_short, token, Address, Env};
+use soroban_sdk::{
+    contract, contracterror, contractimpl, panic_with_error, symbol_short, token, Address, Env, Vec,
+};
 
 // ---------------------------------------------------------------------------
 // Errors
@@ -23,6 +30,10 @@ pub enum StakeError {
     NotAdmin = 3,
     InsufficientStake = 4,
     InsufficientRewards = 5,
+    Paused = 6,
+    InvalidApr = 7,
+    ZeroAddress = 8,
+    InsufficientPool = 9,
 }
 
 // ---------------------------------------------------------------------------
@@ -46,6 +57,8 @@ pub enum StorageKey {
     Admin,
     AprBps,
     RewardPool,
+    Paused,
+    StakerList(Vec<Address>),
 }
 
 // ---------------------------------------------------------------------------
@@ -59,6 +72,33 @@ pub struct StakePosition {
     pub pending_rewards: i128,
     pub last_update: u64,
     pub staked_at: u64,
+    pub last_reward_claim: u64,
+    pub total_rewards_claimed: i128,
+}
+
+#[derive(Clone, Debug)]
+#[soroban_sdk::contracttype]
+pub struct StakeResult {
+    pub staker: Address,
+    pub amount: i128,
+    pub timestamp: u64,
+}
+
+#[derive(Clone, Debug)]
+#[soroban_sdk::contracttype]
+pub struct UnstakeResult {
+    pub staker: Address,
+    pub amount: i128,
+    pub rewards_claimed: i128,
+    pub timestamp: u64,
+}
+
+#[derive(Clone, Debug)]
+#[soroban_sdk::contracttype]
+pub struct ClaimResult {
+    pub staker: Address,
+    pub rewards_claimed: i128,
+    pub timestamp: u64,
 }
 
 // ---------------------------------------------------------------------------
@@ -76,11 +116,28 @@ impl StakingContract {
         env.storage().instance().set(&StorageKey::Token, &token);
         env.storage().instance().set(&StorageKey::AprBps, &1_000u32); // 10% default
         env.storage().instance().set(&StorageKey::RewardPool, &0i128);
-        env.storage().persistent().set(&StorageKey::TotalStaked, &0i128);
+        env.storage()
+            .persistent()
+            .set(&StorageKey::TotalStaked, &0i128);
+        env.storage().instance().set(&StorageKey::Paused, &false);
+        env.storage()
+            .instance()
+            .set(&StorageKey::StakerList, &Vec::new(&env));
     }
 
     /// Stake `amount` tokens from `staker` (requires token approval).
-    pub fn stake(env: Env, staker: Address, amount: i128) -> StakePosition {
+    pub fn stake(env: Env, staker: Address, amount: i128) -> StakeResult {
+        if staker == Address::from_string(&env, "").unwrap() {
+            panic_with_error!(env, StakeError::ZeroAddress);
+        }
+        if env
+            .storage()
+            .instance()
+            .get(&StorageKey::Paused)
+            .unwrap_or(false)
+        {
+            panic_with_error!(env, StakeError::Paused);
+        }
         staker.require_auth();
         if amount <= 0 {
             panic_with_error!(env, StakeError::InvalidAmount);
@@ -115,17 +172,44 @@ impl StakingContract {
             .persistent()
             .set(&StorageKey::Stake(staker.clone()), &pos);
 
+        // Track staker in global list.
+        let mut stakers: Vec<Address> = env
+            .storage()
+            .instance()
+            .get(&StorageKey::StakerList)
+            .unwrap_or(Vec::new(&env));
+        if !stakers.contains(&staker) {
+            stakers.push_back(staker.clone());
+            env.storage()
+                .instance()
+                .set(&StorageKey::StakerList, &stakers);
+        }
+
+        let result = StakeResult {
+            staker,
+            amount,
+            timestamp: env.ledger().timestamp(),
+        };
+
         env.events().publish(
-            (symbol_short!("staking"), symbol_short!("stake"), staker),
+            (symbol_short!("staking"), symbol_short!("stake"), result.staker.clone()),
             amount,
         );
 
-        pos
+        result
     }
 
     /// Withdraw `amount` principal from `staker`'s position. Rewards accrued
     /// up to this point remain claimable.
-    pub fn withdraw(env: Env, staker: Address, amount: i128) -> StakePosition {
+    pub fn withdraw(env: Env, staker: Address, amount: i128) -> UnstakeResult {
+        if env
+            .storage()
+            .instance()
+            .get(&StorageKey::Paused)
+            .unwrap_or(false)
+        {
+            panic_with_error!(env, StakeError::Paused);
+        }
         staker.require_auth();
         if amount <= 0 {
             panic_with_error!(env, StakeError::InvalidAmount);
@@ -156,16 +240,31 @@ impl StakingContract {
             .persistent()
             .set(&StorageKey::Stake(staker.clone()), &pos);
 
+        let result = UnstakeResult {
+            staker,
+            amount,
+            rewards_claimed: 0,
+            timestamp: env.ledger().timestamp(),
+        };
+
         env.events().publish(
             (symbol_short!("staking"), symbol_short!("withdraw"), staker),
             amount,
         );
 
-        pos
+        result
     }
 
     /// Claim all accrued rewards for `staker`, paid from the reward pool.
-    pub fn claim_rewards(env: Env, staker: Address) -> i128 {
+    pub fn claim_rewards(env: Env, staker: Address) -> ClaimResult {
+        if env
+            .storage()
+            .instance()
+            .get(&StorageKey::Paused)
+            .unwrap_or(false)
+        {
+            panic_with_error!(env, StakeError::Paused);
+        }
         staker.require_auth();
 
         let mut pos = Self::load_position(&env, &staker);
@@ -185,6 +284,8 @@ impl StakingContract {
         }
 
         pos.pending_rewards = 0;
+        pos.last_reward_claim = env.ledger().timestamp();
+        pos.total_rewards_claimed += reward;
         pos.last_update = env.ledger().timestamp();
         env.storage()
             .persistent()
@@ -197,12 +298,18 @@ impl StakingContract {
         let contract = env.current_contract_address();
         token::Client::new(&env, &token_addr).transfer(&contract, &staker, &reward);
 
+        let result = ClaimResult {
+            staker,
+            rewards_claimed: reward,
+            timestamp: env.ledger().timestamp(),
+        };
+
         env.events().publish(
             (symbol_short!("staking"), symbol_short!("claim"), staker),
             reward,
         );
 
-        reward
+        result
     }
 
     /// Set the reward APR in basis points (admin only, capped at 100%).
@@ -251,6 +358,80 @@ impl StakingContract {
         );
 
         new_pool
+    }
+
+    /// Pause or unpause the contract. Admin-only. When paused, all
+    /// staking/withdrawal/claim operations are rejected.
+    pub fn set_paused(env: Env, caller: Address, paused: bool) {
+        caller.require_auth();
+        let admin: Address = env
+            .storage()
+            .instance()
+            .get(&StorageKey::Admin)
+            .expect("admin not set");
+        if caller != admin {
+            panic_with_error!(env, StakeError::NotAdmin);
+        }
+        env.storage().instance().set(&StorageKey::Paused, &paused);
+    }
+
+    /// Slash a staker's balance by `amount` (admin only). Used for
+    /// penalty enforcement.
+    pub fn slash(env: Env, caller: Address, target: Address, amount: i128) {
+        caller.require_auth();
+        let admin: Address = env
+            .storage()
+            .instance()
+            .get(&StorageKey::Admin)
+            .expect("admin not set");
+        if caller != admin {
+            panic_with_error!(env, StakeError::NotAdmin);
+        }
+        if amount <= 0 {
+            panic_with_error!(env, StakeError::InvalidAmount);
+        }
+
+        let mut pos = Self::load_position(&env, &target);
+        Self::accrue(&env, &mut pos);
+        if pos.amount < amount {
+            panic_with_error!(env, StakeError::InsufficientStake);
+        }
+
+        pos.amount -= amount;
+        pos.last_update = env.ledger().timestamp();
+        env.storage()
+            .persistent()
+            .set(&StorageKey::Stake(target.clone()), &pos);
+
+        let total: i128 = env
+            .storage()
+            .persistent()
+            .get(&StorageKey::TotalStaked)
+            .unwrap_or(0);
+        env.storage()
+            .persistent()
+            .set(&StorageKey::TotalStaked, &(total - amount));
+
+        env.events().publish(
+            (symbol_short!("staking"), symbol_short!("slash"), target),
+            amount,
+        );
+    }
+
+    /// Get the list of all stakers (read-only).
+    pub fn get_stakers(env: Env) -> Vec<Address> {
+        env.storage()
+            .instance()
+            .get(&StorageKey::StakerList)
+            .unwrap_or(Vec::new(&env))
+    }
+
+    /// Check whether the contract is paused (read-only).
+    pub fn is_paused(env: Env) -> bool {
+        env.storage()
+            .instance()
+            .get(&StorageKey::Paused)
+            .unwrap_or(false)
     }
 
     // -----------------------------------------------------------------------
@@ -317,6 +498,8 @@ impl StakingContract {
                 pending_rewards: 0,
                 last_update: env.ledger().timestamp(),
                 staked_at: 0,
+                last_reward_claim: 0,
+                total_rewards_claimed: 0,
             })
     }
 

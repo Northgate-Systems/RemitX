@@ -97,9 +97,10 @@ fn setup(env: &Env) -> TestHarness<'_> {
     token.mint(&sender, &10_000_000i128);
     token.mint(&recipient, &5_000_000i128);
 
-    // Deploy escrow with the platform release authority.
+    // Deploy escrow with the platform release authority, fee treasury, and fee.
     let platform = Address::generate(env);
-    let contract_id = env.register(EscrowContract, (platform,));
+    let fee_treasury = Address::generate(env);
+    let contract_id = env.register(EscrowContract, (platform, fee_treasury, 0u32));
     let escrow = EscrowContractClient::new(env, &contract_id);
 
     TestHarness {
@@ -168,7 +169,7 @@ fn test_release_before_expiry() {
     let h = setup(&env);
     let id = create_escrow(&h, 3600);
 
-    h.escrow.release(&id);
+    h.escrow.release(&id, &None);
     let state = h.escrow.get_escrow(&id);
     assert_eq!(state.status, EscrowStatus::Released);
 
@@ -183,7 +184,7 @@ fn test_release_after_expiry_panics() {
     let h = setup(&env);
     let id = create_escrow(&h, 3600);
     env.ledger().set_timestamp(env.ledger().timestamp() + 7200);
-    h.escrow.release(&id);
+    h.escrow.release(&id, &None);
 }
 
 // ---------------------------------------------------------------------------
@@ -197,7 +198,7 @@ fn test_refund_after_expiry() {
     let id = create_escrow(&h, 3600);
     env.ledger().set_timestamp(env.ledger().timestamp() + 7200);
 
-    h.escrow.refund(&id);
+    h.escrow.refund(&id, &None);
     let state = h.escrow.get_escrow(&id);
     assert_eq!(state.status, EscrowStatus::Refunded);
 
@@ -224,8 +225,8 @@ fn test_double_release_prevented() {
     let env = Env::default();
     let h = setup(&env);
     let id = create_escrow(&h, 3600);
-    h.escrow.release(&id);
-    h.escrow.release(&id);
+    h.escrow.release(&id, &None);
+    h.escrow.release(&id, &None);
 }
 
 #[test]
@@ -235,8 +236,8 @@ fn test_double_refund_prevented() {
     let h = setup(&env);
     let id = create_escrow(&h, 3600);
     env.ledger().set_timestamp(env.ledger().timestamp() + 7200);
-    h.escrow.refund(&id);
-    h.escrow.refund(&id);
+    h.escrow.refund(&id, &None);
+    h.escrow.refund(&id, &None);
 }
 
 #[test]
@@ -245,7 +246,7 @@ fn test_release_nonexistent_escrow() {
     let env = Env::default();
     let h = setup(&env);
     let fake_id = BytesN::from_array(&env, &[0u8; 32]);
-    h.escrow.release(&fake_id);
+    h.escrow.release(&fake_id, &None);
 }
 
 #[test]
@@ -254,5 +255,5 @@ fn test_refund_nonexistent_escrow() {
     let env = Env::default();
     let h = setup(&env);
     let fake_id = BytesN::from_array(&env, &[0u8; 32]);
-    h.escrow.refund(&fake_id);
+    h.escrow.refund(&fake_id, &None);
 }

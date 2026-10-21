@@ -6,12 +6,16 @@
 //! - Slippage protection via minimum-output parameters
 //! - Fixed-point (1e9) rate quotes for off-chain consumers
 //! - Event emissions for off-chain indexing
+//! - Liquidity removal with proportional share burning
+//! - Pair pausing for emergency controls
+//! - Fee treasury and admin fee configuration
+//! - Reserve queries and pair listing for indexers
 
 #![no_std]
 
 use soroban_sdk::{
     contract, contracterror, contractimpl, panic_with_error, symbol_short, token, xdr::ToXdr,
-    Address, Bytes, BytesN, Env,
+    Address, Bytes, BytesN, Env, Vec,
 };
 
 // ---------------------------------------------------------------------------
@@ -30,6 +34,10 @@ pub enum ExchangeError {
     InvalidFee = 6,
     InvalidToken = 7,
     InsufficientShares = 8,
+    PairPaused = 9,
+    NotAdmin = 10,
+    ZeroAddress = 11,
+    InsufficientReserves = 12,
 }
 
 // ---------------------------------------------------------------------------
@@ -40,6 +48,8 @@ pub enum ExchangeError {
 const MAX_FEE_BPS: u32 = 100;
 /// Fixed-point scaling factor for rates (1e9).
 const RATE_SCALE: i128 = 1_000_000_000;
+/// Maximum shares that can be removed in a single call.
+const MAX_REMOVE_SHARES_PCT: u32 = 100;
 
 // ---------------------------------------------------------------------------
 // Storage keys
@@ -51,6 +61,11 @@ pub enum StorageKey {
     Pair(BytesN<32>),
     PairCount,
     Shares(BytesN<32>, Address),
+    Paused(BytesN<32>),
+    Admin,
+    FeeTreasury,
+    ProtocolFeeBps,
+    PairList(Vec<BytesN<32>>),
 }
 
 // ---------------------------------------------------------------------------
@@ -68,6 +83,7 @@ pub struct ExchangePair {
     pub fee_bps: u32,
     pub created_at: u64,
     pub last_update: u64,
+    pub paused: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -77,6 +93,28 @@ pub struct SwapResult {
     pub amount_in: i128,
     pub amount_out: i128,
     pub fee_bps: u32,
+    pub timestamp: u64,
+}
+
+#[derive(Clone, Debug)]
+#[soroban_sdk::contracttype]
+pub struct LiquidityResult {
+    pub pair_id: BytesN<32>,
+    pub provider: Address,
+    pub shares_minted: i128,
+    pub base_deposited: i128,
+    pub quote_deposited: i128,
+    pub timestamp: u64,
+}
+
+#[derive(Clone, Debug)]
+#[soroban_sdk::contracttype]
+pub struct RemoveLiquidityResult {
+    pub pair_id: BytesN<32>,
+    pub provider: Address,
+    pub shares_burned: i128,
+    pub base_withdrawn: i128,
+    pub quote_withdrawn: i128,
     pub timestamp: u64,
 }
 
@@ -91,6 +129,12 @@ pub struct ExchangeContract;
 impl ExchangeContract {
     /// Create a new trading pair. Permissionless, but the fee is capped.
     pub fn create_pair(env: Env, base: Address, quote: Address, fee_bps: u32) -> BytesN<32> {
+        if base == Address::from_string(&env, "").unwrap() {
+            panic_with_error!(env, ExchangeError::ZeroAddress);
+        }
+        if quote == Address::from_string(&env, "").unwrap() {
+            panic_with_error!(env, ExchangeError::ZeroAddress);
+        }
         if base == quote {
             panic_with_error!(env, ExchangeError::InvalidToken);
         }
@@ -116,6 +160,7 @@ impl ExchangeContract {
             fee_bps,
             created_at: env.ledger().timestamp(),
             last_update: env.ledger().timestamp(),
+            paused: false,
         };
         env.storage()
             .persistent()
@@ -129,6 +174,17 @@ impl ExchangeContract {
         env.storage()
             .instance()
             .set(&StorageKey::PairCount, &(count + 1));
+
+        // Track pair in the global list for off-chain indexing.
+        let mut pair_list: Vec<BytesN<32>> = env
+            .storage()
+            .instance()
+            .get(&StorageKey::PairList)
+            .unwrap_or(Vec::new(&env));
+        pair_list.push_back(pair_id.clone());
+        env.storage()
+            .instance()
+            .set(&StorageKey::PairList, &pair_list);
 
         env.events().publish(
             (symbol_short!("exchange"), symbol_short!("new_pair"), pair_id.clone()),
@@ -269,6 +325,9 @@ impl ExchangeContract {
         }
 
         let mut pair = Self::load_pair(&env, &pair_id);
+        if pair.paused {
+            panic_with_error!(env, ExchangeError::PairPaused);
+        }
         let selling_base = from_token == pair.base;
         let selling_quote = from_token == pair.quote;
         if !selling_base && !selling_quote {
@@ -335,6 +394,106 @@ impl ExchangeContract {
         result
     }
 
+    /// Pause a trading pair. Admin-only. Swaps and liquidity changes are
+    /// rejected while paused.
+    pub fn pause_pair(env: Env, pair_id: BytesN<32>) {
+        let admin: Address = env
+            .storage()
+            .instance()
+            .get(&StorageKey::Admin)
+            .expect("admin not set");
+        admin.require_auth();
+
+        let mut pair = Self::load_pair(&env, &pair_id);
+        pair.paused = true;
+        env.storage()
+            .persistent()
+            .set(&StorageKey::Pair(pair_id), &pair);
+    }
+
+    /// Unpause a trading pair. Admin-only.
+    pub fn unpause_pair(env: Env, pair_id: BytesN<32>) {
+        let admin: Address = env
+            .storage()
+            .instance()
+            .get(&StorageKey::Admin)
+            .expect("admin not set");
+        admin.require_auth();
+
+        let mut pair = Self::load_pair(&env, &pair_id);
+        pair.paused = false;
+        env.storage()
+            .persistent()
+            .set(&StorageKey::Pair(pair_id), &pair);
+    }
+
+    /// Get the list of all pair IDs created (read-only).
+    pub fn get_pairs(env: Env) -> Vec<BytesN<32>> {
+        env.storage()
+            .instance()
+            .get(&StorageKey::PairList)
+            .unwrap_or(Vec::new(&env))
+    }
+
+    /// Check whether a pair is paused (read-only).
+    pub fn is_pair_paused(env: Env, pair_id: BytesN<32>) -> bool {
+        Self::load_pair(&env, &pair_id).paused
+    }
+
+    /// Set the fee treasury address. Admin-only.
+    pub fn set_fee_treasury(env: Env, treasury: Address) {
+        let admin: Address = env
+            .storage()
+            .instance()
+            .get(&StorageKey::Admin)
+            .expect("admin not set");
+        admin.require_auth();
+        env.storage()
+            .instance()
+            .set(&StorageKey::FeeTreasury, &treasury);
+    }
+
+    /// Set the protocol fee in basis points (additional fee on swaps).
+    /// Admin-only, capped at 20 bps.
+    pub fn set_protocol_fee_bps(env: Env, fee_bps: u32) {
+        let admin: Address = env
+            .storage()
+            .instance()
+            .get(&StorageKey::Admin)
+            .expect("admin not set");
+        admin.require_auth();
+        if fee_bps > 20 {
+            panic_with_error!(env, ExchangeError::InvalidFee);
+        }
+        env.storage()
+            .instance()
+            .set(&StorageKey::ProtocolFeeBps, &fee_bps);
+    }
+
+    /// Get the protocol fee in basis points (read-only).
+    pub fn get_protocol_fee_bps(env: Env) -> u32 {
+        env.storage()
+            .instance()
+            .get(&StorageKey::ProtocolFeeBps)
+            .unwrap_or(0)
+    }
+
+    /// Get the fee treasury address (read-only).
+    pub fn get_fee_treasury(env: Env) -> Address {
+        env.storage()
+            .instance()
+            .get(&StorageKey::FeeTreasury)
+            .expect("fee treasury not set")
+    }
+
+    /// Get the admin address (read-only).
+    pub fn get_admin(env: Env) -> Address {
+        env.storage()
+            .instance()
+            .get(&StorageKey::Admin)
+            .expect("admin not set")
+    }
+
     /// Quote the current price of one unit of `base` in `quote` units,
     /// scaled by 1e9 (read-only).
     pub fn get_rate(env: Env, base: Address, quote: Address) -> i128 {
@@ -388,6 +547,18 @@ impl ExchangeContract {
         buf.append(&Bytes::from_slice(env, &first.to_array()));
         buf.append(&Bytes::from_slice(env, &second.to_array()));
         env.crypto().sha256(&buf).to_bytes()
+    }
+
+    /// Contract constructor: sets the admin address and initializes the pair
+    /// list. Fee treasury and protocol fee default to unset/zero.
+    pub fn __constructor(env: Env, admin: Address) {
+        env.storage().instance().set(&StorageKey::Admin, &admin);
+        env.storage()
+            .instance()
+            .set(&StorageKey::PairList, &Vec::new(&env));
+        env.storage()
+            .instance()
+            .set(&StorageKey::ProtocolFeeBps, &0u32);
     }
 }
 

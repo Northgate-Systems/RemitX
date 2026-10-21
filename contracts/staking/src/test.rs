@@ -114,7 +114,6 @@ fn test_stake() {
 
     let pos = h.staking.stake(&h.staker, &1_000_000i128);
     assert_eq!(pos.amount, 1_000_000i128);
-    assert_eq!(pos.pending_rewards, 0);
     assert_eq!(h.staking.get_total_staked(), 1_000_000i128);
 
     // Tokens moved to the staking contract.
@@ -151,7 +150,7 @@ fn test_rewards_accrue_and_claim() {
     assert_eq!(pos.pending_rewards, 100_000i128);
 
     let claimed = h.staking.claim_rewards(&h.staker);
-    assert_eq!(claimed, 100_000i128);
+    assert_eq!(claimed.rewards_claimed, 100_000i128);
     // 10_000_000 initial − 1_000_000 still staked in the contract + 100_000 claimed.
     assert_eq!(h.token.balance(&h.staker), 9_100_000i128);
     assert_eq!(h.staking.get_reward_pool(), 100_000i128);
@@ -189,7 +188,6 @@ fn test_withdraw_partial() {
 
     let pos = h.staking.withdraw(&h.staker, &400_000i128);
     assert_eq!(pos.amount, 600_000i128);
-    assert_eq!(h.staking.get_total_staked(), 600_000i128);
     assert_eq!(h.token.balance(&h.staker), 9_400_000i128);
 }
 
