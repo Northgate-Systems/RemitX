@@ -1,3 +1,25 @@
+#![no_std]
+//! Input validation rules.
+//! Ported from `src/lib/validations.ts` (originally zod schemas).
+//! Provides composable validation functions for emails, amounts, Stellar
+//! addresses, passwords, and transactions. Reuses `core::strkey` and
+//! soroban SDK types for address validation.
+
+//! @module email
+//! Validates email address format using regex pattern matching.
+
+//! @module amount
+//! Validates monetary amounts are positive and within reasonable bounds.
+
+//! @module address
+//! Validates Stellar address format and checksum using Strkey encoding.
+
+//! @module password
+//! Validates password strength requirements.
+
+//! @module transaction
+//! Validates transaction parameters before broadcasting to the network.
+#![no_root]
 //! Input validation rules.
 //!
 //! Ported from `src/lib/validations.ts` (originally zod schemas).
