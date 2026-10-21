@@ -13,11 +13,13 @@
 //!   * [`anchors`]   — curated SEP-24 anchor directory, filtering, and fee math
 //!   * [`validation`]— request-field validation rules (registration, send, etc.)
 //!   * [`rates`]     — exchange-rate resolution, caching, and fixed-point math
+//!   * [`security`]  — rate limiting, CSRF, sanitization, account lockout,
 //!   * [`types`]     — shared row/domain types mirroring the Supabase schema
 
 pub mod anchors;
 pub mod password;
 pub mod rates;
+pub mod security;
 pub mod strkey;
 pub mod types;
 pub mod validation;
@@ -25,6 +27,10 @@ pub mod validation;
 pub use anchors::{estimate_fee, list_anchors, Anchor, AnchorFilters};
 pub use password::{get_password_strength, PasswordCheck, PasswordStrength, MIN_PASSWORD_SCORE};
 pub use rates::{convert, default_fetch, now_seconds, RateCache, RateEntry, RateError};
+pub use security::{
+    generate_reset_token, is_allowed_origin, sanitize_email, sanitize_input, security_headers,
+    validate_reset_token, ALLOWED_ORIGINS, ALLOWED_UPLOAD_TYPES, MAX_REQUEST_SIZE, MAX_UPLOAD_SIZE,
+};
 pub use strkey::{check_stellar_public_key, is_valid_stellar_public_key, StellarAddressCheck};
 pub use validation::{
     validate_amount, validate_email, validate_password, validate_stellar_address, ValidationError,
