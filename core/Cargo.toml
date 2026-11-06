@@ -19,7 +19,7 @@ hmac = "0.12"
 sha2 = "0.10"
 
 # Base64URL encoding for CSRF / reset-token payloads.
-base64 = { version = "0.22", features = ["alloc"] }
+base64 = { version = "0.23", features = ["alloc"] }
 
 # Hex encoding for HMAC signatures.
 hex = "0.4"
