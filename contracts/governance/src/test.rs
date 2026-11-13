@@ -70,8 +70,11 @@ impl MockToken {
 
 /// Total supply minted across all voters in the harness.
 const TOTAL_SUPPLY: i128 = 1_000_000;
-/// One-hour voting window (the minimum allowed).
-const VOTING_PERIOD: u64 = 60 * 60;
+/// Delay before a proposal's voting window opens. Proposals are `Pending`
+/// during this delay, giving the proposer a reachable cancellation window.
+const VOTING_DELAY: u64 = 60 * 60;
+/// Two-hour voting window (must exceed the voting delay).
+const VOTING_PERIOD: u64 = 2 * 60 * 60;
 
 struct TestHarness<'a> {
     gov: GovernanceContractClient<'a>,
@@ -107,6 +110,32 @@ fn setup(env: &Env) -> TestHarness<'_> {
         bob,
         carol,
     }
+}
+
+/// Like [`setup`] but without `mock_all_auths`, so `require_auth` is
+/// actually enforced. Used for negative authorization tests.
+fn setup_no_auth(
+    env: &Env,
+) -> (
+    GovernanceContractClient<'_>,
+    MockTokenClient<'_>,
+    Address,
+    Address,
+) {
+    let token = MockTokenClient::new(env, &env.register(MockToken, ()));
+
+    let admin = Address::generate(env);
+    let proposer = Address::generate(env);
+    let intruder = Address::generate(env);
+    token.mint(&admin, &TOTAL_SUPPLY);
+
+    let gov_id = env.register(
+        GovernanceContract,
+        (admin.clone(), token.address.clone(), TOTAL_SUPPLY),
+    );
+    let gov = GovernanceContractClient::new(env, &gov_id);
+
+    (gov, token, proposer, intruder)
 }
 
 fn description(env: &Env) -> Bytes {
@@ -152,7 +181,8 @@ fn test_propose() {
     assert_eq!(p.yes_votes, 0);
     assert_eq!(p.no_votes, 0);
     assert!(!p.executed);
-    assert_eq!(h.gov.get_status(&id), ProposalStatus::Active);
+    // Voting has not opened yet (it starts after the voting delay).
+    assert_eq!(h.gov.get_status(&id), ProposalStatus::Pending);
 }
 
 #[test]
@@ -188,6 +218,9 @@ fn test_vote_records_weight() {
     let env = Env::default();
     let h = setup(&env);
     let id = create_proposal(&h);
+    // Voting opens after the voting delay.
+    env.ledger()
+        .set_timestamp(env.ledger().timestamp() + VOTING_DELAY + 1);
 
     let w = h.gov.vote(&h.alice, &id, &true).voting_power;
     assert_eq!(w, 600_000i128); // alice's balance is her voting power
@@ -204,6 +237,8 @@ fn test_double_vote_panics() {
     let env = Env::default();
     let h = setup(&env);
     let id = create_proposal(&h);
+    env.ledger()
+        .set_timestamp(env.ledger().timestamp() + VOTING_DELAY + 1);
     h.gov.vote(&h.alice, &id, &true);
     h.gov.vote(&h.alice, &id, &false);
 }
@@ -228,6 +263,8 @@ fn test_execute_passed_proposal() {
     let env = Env::default();
     let h = setup(&env);
     let id = create_proposal(&h);
+    env.ledger()
+        .set_timestamp(env.ledger().timestamp() + VOTING_DELAY + 1);
 
     // alice (600k yes) + carol (100k yes) meet quorum (4% of 1M = 40k).
     h.gov.vote(&h.alice, &id, &true);
@@ -248,6 +285,8 @@ fn test_execute_before_close_panics() {
     let env = Env::default();
     let h = setup(&env);
     let id = create_proposal(&h);
+    env.ledger()
+        .set_timestamp(env.ledger().timestamp() + VOTING_DELAY + 1);
     h.gov.vote(&h.alice, &id, &true);
     // Still within the voting window.
     h.gov.execute(&id);
@@ -259,6 +298,8 @@ fn test_execute_twice_panics() {
     let env = Env::default();
     let h = setup(&env);
     let id = create_proposal(&h);
+    env.ledger()
+        .set_timestamp(env.ledger().timestamp() + VOTING_DELAY + 1);
     h.gov.vote(&h.alice, &id, &true);
     env.ledger()
         .set_timestamp(env.ledger().timestamp() + VOTING_PERIOD + 1);
@@ -272,6 +313,8 @@ fn test_execute_rejected_proposal_panics() {
     let env = Env::default();
     let h = setup(&env);
     let id = create_proposal(&h);
+    env.ledger()
+        .set_timestamp(env.ledger().timestamp() + VOTING_DELAY + 1);
 
     // Rejection: more no than yes.
     h.gov.vote(&h.bob, &id, &false); // 300k no
@@ -281,6 +324,126 @@ fn test_execute_rejected_proposal_panics() {
         .set_timestamp(env.ledger().timestamp() + VOTING_PERIOD + 1);
     assert_eq!(h.gov.get_status(&id), ProposalStatus::Rejected);
     h.gov.execute(&id);
+}
+
+// ---------------------------------------------------------------------------
+// Authorization tests: require_auth is enforced (no mock_all_auths)
+// ---------------------------------------------------------------------------
+
+#[test]
+#[should_panic(expected = "Error(Auth, InvalidAction)")]
+fn test_set_quorum_requires_auth() {
+    let env = Env::default();
+    let (gov, _token, _admin, intruder) = setup_no_auth(&env);
+    gov.set_quorum(&intruder, &400u32);
+}
+
+#[test]
+#[should_panic(expected = "Error(Auth, InvalidAction)")]
+fn test_extend_voting_requires_auth() {
+    let env = Env::default();
+    let (gov, _token, _admin, intruder) = setup_no_auth(&env);
+    gov.extend_voting(&intruder, &1, &3600u64);
+}
+
+#[test]
+#[should_panic(expected = "Error(Auth, InvalidAction)")]
+fn test_cancel_requires_auth() {
+    let env = Env::default();
+    let (gov, _token, _admin, intruder) = setup_no_auth(&env);
+    gov.cancel(&intruder, &1);
+}
+
+// ---------------------------------------------------------------------------
+// set_quorum() tests
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_set_quorum_admin_succeeds() {
+    let env = Env::default();
+    let h = setup(&env);
+    let admin = h.gov.get_admin();
+    h.gov.set_quorum(&admin, &1_000u32);
+    assert_eq!(h.gov.get_quorum(), 1_000u32);
+}
+
+// ---------------------------------------------------------------------------
+// cancel() tests
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_cancel_proposer_during_delay_window() {
+    let env = Env::default();
+    let h = setup(&env);
+    let id = create_proposal(&h); // proposer is alice
+
+    // Cancel while voting has not started yet (within the delay window).
+    h.gov.cancel(&h.alice, &id);
+    assert!(h.gov.get_proposal(&id).cancelled);
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #2)")]
+fn test_cancel_after_voting_starts_fails() {
+    let env = Env::default();
+    let h = setup(&env);
+    let id = create_proposal(&h);
+
+    // Advance past voting_starts; cancellation is no longer reachable.
+    env.ledger()
+        .set_timestamp(env.ledger().timestamp() + VOTING_DELAY + 1);
+    h.gov.cancel(&h.alice, &id);
+}
+
+// ---------------------------------------------------------------------------
+// extend_voting() tests
+// ---------------------------------------------------------------------------
+
+#[test]
+fn test_extend_voting_capped_at_max_period() {
+    let env = Env::default();
+    let h = setup(&env);
+    let id = create_proposal(&h);
+    let p = h.gov.get_proposal(&id);
+    let max_ends = p.created_at + MAX_VOTING_PERIOD;
+    let admin = h.gov.get_admin();
+
+    // Extending by the full maximum period cannot push voting_ends past
+    // `created_at + MAX_VOTING_PERIOD`.
+    h.gov.extend_voting(&admin, &id, &MAX_VOTING_PERIOD);
+    let p = h.gov.get_proposal(&id);
+    assert_eq!(p.voting_ends, max_ends);
+}
+
+// ---------------------------------------------------------------------------
+// Zero-balance tests (dedicated ZeroBalance error)
+// ---------------------------------------------------------------------------
+
+#[test]
+#[should_panic(expected = "Error(Contract, #15)")]
+fn test_propose_zero_balance_panics() {
+    let env = Env::default();
+    let h = setup(&env);
+    let broke = Address::generate(&env);
+    h.gov.propose(
+        &broke,
+        &title(),
+        &description(&env),
+        &action(&env),
+        &VOTING_PERIOD,
+    );
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #15)")]
+fn test_vote_zero_balance_panics() {
+    let env = Env::default();
+    let h = setup(&env);
+    let id = create_proposal(&h);
+    env.ledger()
+        .set_timestamp(env.ledger().timestamp() + VOTING_DELAY + 1);
+    let broke = Address::generate(&env);
+    h.gov.vote(&broke, &id, &true);
 }
 
 // ---------------------------------------------------------------------------

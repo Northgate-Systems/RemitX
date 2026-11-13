@@ -42,6 +42,8 @@ pub enum GovernanceError {
     CannotExtendEnded = 12,
     ZeroAddress = 13,
     InvalidQuorum = 14,
+    /// Proposer or voter holds a zero token balance.
+    ZeroBalance = 15,
 }
 
 // ---------------------------------------------------------------------------
@@ -56,6 +58,11 @@ const MAX_VOTING_PERIOD: u64 = 14 * 24 * 60 * 60;
 const DEFAULT_QUORUM_BPS: u32 = 400;
 /// Maximum quorum: 100% (10_000 bps).
 const MAX_QUORUM_BPS: u32 = 10_000;
+/// Default delay between proposal creation and the start of the voting
+/// window. Proposals are `Pending` during this delay, which gives the
+/// proposer a reachable window in which to cancel. Must be smaller than the
+/// voting period for a non-degenerate voting window.
+const VOTING_DELAY_SECONDS: u64 = 60 * 60;
 
 // ---------------------------------------------------------------------------
 // Storage keys
@@ -171,7 +178,7 @@ impl GovernanceContract {
             panic_with_error!(env, GovernanceError::InvalidPeriod);
         }
         if Self::balance_of(&env, &proposer) <= 0 {
-            panic_with_error!(env, GovernanceError::InvalidProposal);
+            panic_with_error!(env, GovernanceError::ZeroBalance);
         }
 
         let count: u32 = env
@@ -189,7 +196,7 @@ impl GovernanceContract {
             description_hash: env.crypto().sha256(&description).to_bytes(),
             action_hash,
             created_at: now,
-            voting_starts: now,
+            voting_starts: now + VOTING_DELAY_SECONDS,
             voting_ends: now + voting_period,
             yes_votes: 0,
             no_votes: 0,
@@ -230,7 +237,7 @@ impl GovernanceContract {
 
         let weight = Self::balance_of(&env, &voter);
         if weight <= 0 {
-            panic_with_error!(env, GovernanceError::InvalidProposal);
+            panic_with_error!(env, GovernanceError::ZeroBalance);
         }
 
         if support {
@@ -308,6 +315,7 @@ impl GovernanceContract {
 
     /// Cancel a proposal before voting starts. Only the proposer may cancel.
     pub fn cancel(env: Env, caller: Address, id: u32) {
+        caller.require_auth();
         let mut proposal = Self::load_proposal(&env, id);
         if proposal.proposer != caller {
             panic_with_error!(env, GovernanceError::NotProposer);
@@ -332,6 +340,7 @@ impl GovernanceContract {
     /// Extend the voting period of a proposal. Admin-only. Cannot extend
     /// after voting has ended.
     pub fn extend_voting(env: Env, caller: Address, id: u32, additional_seconds: u64) {
+        caller.require_auth();
         let admin: Address = env
             .storage()
             .instance()
@@ -350,7 +359,18 @@ impl GovernanceContract {
             panic_with_error!(env, GovernanceError::VotingClosed);
         }
 
-        proposal.voting_ends += additional_seconds;
+        // Cap the extended end at `created_at + MAX_VOTING_PERIOD` so the
+        // voting period can never exceed the maximum. Use checked arithmetic
+        // to avoid timestamp overflow.
+        let max_ends = proposal
+            .created_at
+            .checked_add(MAX_VOTING_PERIOD)
+            .expect("timestamp overflow");
+        let new_ends = proposal
+            .voting_ends
+            .checked_add(additional_seconds)
+            .expect("timestamp overflow");
+        proposal.voting_ends = new_ends.min(max_ends);
         env.storage()
             .persistent()
             .set(&StorageKey::Proposal(id), &proposal);
@@ -363,6 +383,7 @@ impl GovernanceContract {
 
     /// Set the quorum threshold in basis points (admin only, max 100%).
     pub fn set_quorum(env: Env, caller: Address, quorum_bps: u32) {
+        caller.require_auth();
         let admin: Address = env
             .storage()
             .instance()
