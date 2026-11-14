@@ -24,6 +24,8 @@ export interface Transaction {
   toAsset: string;
   fromAmount: string; // stored as string to avoid precision loss
   toAmount: string | null;
+  destMin?: string | null;
+  unsignedTxHash?: string | null;
   recipientAddress: string;
   stellarTxHash: string | null;
   escrowId: string | null;

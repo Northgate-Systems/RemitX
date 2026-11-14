@@ -153,6 +153,8 @@ export class MemoryTransactionRepository implements TransactionRepository {
       toAsset: data.toAsset.toUpperCase(),
       fromAmount: String(data.fromAmount),
       toAmount: data.toAmount !== null && data.toAmount !== undefined ? String(data.toAmount) : null,
+      destMin: data.destMin !== null && data.destMin !== undefined ? String(data.destMin) : null,
+      unsignedTxHash: data.unsignedTxHash ?? null,
       recipientAddress: data.recipientAddress,
       stellarTxHash: data.stellarTxHash ?? null,
       escrowId: data.escrowId ?? null,

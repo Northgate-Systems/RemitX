@@ -1,17 +1,34 @@
-import { Keypair, Operation, TransactionBuilder } from "@stellar/stellar-sdk";
+import { Asset, Keypair, Operation, TransactionBuilder } from "@stellar/stellar-sdk";
 import { toStroops } from "./amounts";
+import { resolveAsset } from "./stellar";
 
 export class TxMismatchError extends Error {}
+
+export interface ExpectedTransfer {
+  source: string;
+  recipient: string;
+  fromAmount: string;
+  networkPassphrase: string;
+  fromAsset?: Asset | string;
+  toAsset?: Asset | string;
+  destMin?: string;
+  unsignedTxHash?: string;
+}
+
+function normalizeAsset(asset: Asset | string): Asset {
+  return typeof asset === "string" ? resolveAsset(asset) : asset;
+}
 
 /**
  * Checks that a wallet-signed XDR is the transfer we created: right source,
  * a single path-payment-strict-send to the stored recipient for the stored
- * amount, and a valid signature from the source account. Without this a user
- * could submit any signed transaction and have the record marked "confirmed".
+ * amount/assets/destMin floor (and optional unsigned transaction hash), and a
+ * valid signature from the source account. Without this a user could submit
+ * a modified transaction and have the record marked "confirmed".
  */
 export function assertSignedXdrMatches(
   signedXdr: string,
-  expected: { source: string; recipient: string; fromAmount: string; networkPassphrase: string }
+  expected: ExpectedTransfer
 ): void {
   let tx;
   try {
@@ -25,12 +42,39 @@ export function assertSignedXdrMatches(
 
   const op = tx.operations[0] as Operation.PathPaymentStrictSend;
   if (op.type !== "pathPaymentStrictSend") throw new TxMismatchError("Unexpected operation type");
+  if (op.source && op.source !== expected.source) {
+    throw new TxMismatchError("Operation source does not match your account");
+  }
   if (op.destination !== expected.recipient) throw new TxMismatchError("Recipient does not match the transfer");
   if (toStroops(op.sendAmount) !== toStroops(expected.fromAmount)) {
     throw new TxMismatchError("Amount does not match the transfer");
   }
 
+  if (expected.fromAsset !== undefined) {
+    const expectedSendAsset = normalizeAsset(expected.fromAsset);
+    if (!op.sendAsset.equals(expectedSendAsset)) {
+      throw new TxMismatchError("Send asset does not match the transfer");
+    }
+  }
+
+  if (expected.toAsset !== undefined) {
+    const expectedDestAsset = normalizeAsset(expected.toAsset);
+    if (!op.destAsset.equals(expectedDestAsset)) {
+      throw new TxMismatchError("Destination asset does not match the transfer");
+    }
+  }
+
+  if (expected.destMin !== undefined) {
+    if (toStroops(op.destMin) < toStroops(expected.destMin)) {
+      throw new TxMismatchError("Minimum destination amount is below the transfer floor");
+    }
+  }
+
   const hash = tx.hash();
+  if (expected.unsignedTxHash && hash.toString("hex") !== expected.unsignedTxHash) {
+    throw new TxMismatchError("Signed transaction hash does not match the prepared transfer");
+  }
+
   const keypair = Keypair.fromPublicKey(expected.source);
   const signed = tx.signatures.some((s) => {
     try {
