@@ -252,7 +252,7 @@ export default function LoginPage() {
               {demoLoading ? "Opening demo..." : "Try the demo account"}
             </button>
             <p className="rx-small mt-3 text-center">
-              {isDemo ? "Demo mode active — millions of users flowing." : "Demo login: alice@remitx.dev with Password123!"}
+              {isDemo ? "Demo mode active — millions of users flowing." : "Demo login available in non-production with ENABLE_DEMO_LOGIN=true."}
             </p>
 
             <p className="mt-8 text-center text-[14.5px] text-muted">
