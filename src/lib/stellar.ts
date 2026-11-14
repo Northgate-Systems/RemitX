@@ -1,5 +1,4 @@
 import {
-  Keypair,
   Networks,
   Horizon,
   Asset,
@@ -40,34 +39,6 @@ export function resolveAsset(code: string): Asset {
     throw new Error(`${envKey} is not a valid Stellar public key.`);
   }
   return new Asset(upper, issuer);
-}
-
-/** Generate a new Stellar keypair and fund it via Friendbot (testnet only).
- * The server never stores the secret key — it's returned once to the caller. */
-export async function createTestnetAccount(): Promise<{
-  publicKey: string;
-  secretKey: string;
-}> {
-  const keypair = Keypair.random();
-  const publicKey = keypair.publicKey();
-  const secretKey = keypair.secret();
-
-  if (NETWORK !== "testnet") {
-    throw new Error("Testnet account creation is only available on testnet");
-  }
-
-  // Fund via Friendbot (fire and forget — we still return the keypair even if funding lags)
-  try {
-    await withTimeout(
-      fetch(`https://friendbot.stellar.org?addr=${encodeURIComponent(publicKey)}`),
-      HORIZON_TIMEOUT_MS,
-      "Friendbot create+fund"
-    );
-  } catch {
-    // Funding may be async; account is still valid
-  }
-
-  return { publicKey, secretKey };
 }
 
 /** Ask Friendbot to fund a testnet account. Testnet only; the server never
