@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { data } from "@/lib/data";
-import { hashPassword, signToken, setSessionCookie, toSafeUser } from "@/lib/auth";
+import { signToken, setSessionCookie, toSafeUser } from "@/lib/auth";
 import { setDemoCookie } from "@/lib/demo-mode";
 import { successResponse, errorResponse } from "@/lib/api-response";
 import { rateLimit, logSecurityEvent } from "@/lib/security";
@@ -8,9 +8,19 @@ import { rateLimit, logSecurityEvent } from "@/lib/security";
 export const dynamic = "force-dynamic";
 
 const DEMO_EMAIL = "alice@remitx.dev";
-const DEMO_PASSWORD = "Password123!";
+
+export function isDemoLoginEnabled(): boolean {
+  return (
+    process.env.NODE_ENV !== "production" &&
+    process.env.ENABLE_DEMO_LOGIN === "true"
+  );
+}
 
 export async function performDemoLogin(request: NextRequest): Promise<Response> {
+  if (!isDemoLoginEnabled()) {
+    return errorResponse("Not found", 404);
+  }
+
   try {
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
     const rl = rateLimit(`demo-login:${ip}`, 20, 60_000);
@@ -21,13 +31,12 @@ export async function performDemoLogin(request: NextRequest): Promise<Response> 
 
     let user = await data.users.findByEmail(DEMO_EMAIL);
     if (!user) {
-      // Seed a demo user on demand so demo login works even if the store was reset.
-      const passwordHash = await hashPassword(DEMO_PASSWORD);
+      // Seed a demo user on demand without a hardcoded password.
       user = await data.users.create({
         firstName: "Alice",
         lastName: "Johnson",
         email: DEMO_EMAIL,
-        passwordHash,
+        passwordHash: "",
         stellarPublicKey: null,
         kycStatus: "verified",
         sessionVersion: 1,
