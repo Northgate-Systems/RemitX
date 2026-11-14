@@ -349,9 +349,21 @@ impl ExchangeContract {
         let contract = env.current_contract_address();
         token::Client::new(&env, &from_token).transfer(&sender, &contract, &amount_in);
 
-        // Constant-product swap with fee retained in the pool.
-        let fee = amount_in * pair.fee_bps as i128 / 10_000;
-        let amount_in_net = amount_in - fee;
+        // Constant-product swap: LP fee stays in the pool; optional protocol fee
+        // is transferred to the configured fee treasury.
+        let lp_fee = amount_in * pair.fee_bps as i128 / 10_000;
+        let protocol_fee_bps: u32 = env
+            .storage()
+            .instance()
+            .get(&StorageKey::ProtocolFeeBps)
+            .unwrap_or(0);
+        let treasury_opt: Option<Address> = env.storage().instance().get(&StorageKey::FeeTreasury);
+        let protocol_fee = if protocol_fee_bps > 0 && treasury_opt.is_some() {
+            amount_in * protocol_fee_bps as i128 / 10_000
+        } else {
+            0
+        };
+        let amount_in_net = amount_in - lp_fee - protocol_fee;
         let amount_out = res_out * amount_in_net / (res_in + amount_in_net);
         if amount_out <= 0 {
             panic_with_error!(env, ExchangeError::InsufficientLiquidity);
@@ -363,6 +375,10 @@ impl ExchangeContract {
             panic_with_error!(env, ExchangeError::InsufficientLiquidity);
         }
 
+        if let Some(treasury) = treasury_opt.filter(|_| protocol_fee > 0) {
+            token::Client::new(&env, &from_token).transfer(&contract, &treasury, &protocol_fee);
+        }
+
         let to_token = if selling_base {
             pair.quote.clone()
         } else {
@@ -370,11 +386,12 @@ impl ExchangeContract {
         };
         token::Client::new(&env, &to_token).transfer(&contract, &sender, &amount_out);
 
+        let reserve_in_delta = amount_in - protocol_fee;
         if selling_base {
-            pair.base_reserve += amount_in;
+            pair.base_reserve += reserve_in_delta;
             pair.quote_reserve -= amount_out;
         } else {
-            pair.quote_reserve += amount_in;
+            pair.quote_reserve += reserve_in_delta;
             pair.base_reserve -= amount_out;
         }
         pair.last_update = env.ledger().timestamp();
@@ -502,10 +519,17 @@ impl ExchangeContract {
     pub fn get_rate(env: Env, base: Address, quote: Address) -> i128 {
         let pair_id = Self::compute_pair_id(&env, &base, &quote);
         let pair = Self::load_pair(&env, &pair_id);
-        if pair.base_reserve <= 0 {
+        let (res_base, res_quote) = if base == pair.base && quote == pair.quote {
+            (pair.base_reserve, pair.quote_reserve)
+        } else if base == pair.quote && quote == pair.base {
+            (pair.quote_reserve, pair.base_reserve)
+        } else {
+            panic_with_error!(env, ExchangeError::InvalidToken);
+        };
+        if res_base <= 0 || res_quote <= 0 {
             panic_with_error!(env, ExchangeError::InsufficientLiquidity);
         }
-        pair.quote_reserve * RATE_SCALE / pair.base_reserve
+        res_quote * RATE_SCALE / res_base
     }
 
     /// Get a pair by ID (read-only).

@@ -310,3 +310,44 @@ fn test_get_rate() {
     let rate = h.exchange.get_rate(&h.base.address, &h.quote.address);
     assert_eq!(rate, 4_000_000_000i128);
 }
+
+#[test]
+fn test_get_rate_symmetry() {
+    let env = Env::default();
+    let h = setup(&env);
+    seed_liquidity(&h);
+
+    let forward = h.exchange.get_rate(&h.base.address, &h.quote.address);
+    let reverse = h.exchange.get_rate(&h.quote.address, &h.base.address);
+    assert_eq!(forward, 4_000_000_000i128);
+    assert_eq!(reverse, 250_000_000i128);
+    assert_eq!(forward * reverse / RATE_SCALE, RATE_SCALE);
+}
+
+#[test]
+fn test_swap_charges_protocol_fee_to_treasury() {
+    let env = Env::default();
+    let h = setup(&env);
+    seed_liquidity(&h);
+
+    let treasury = Address::generate(&env);
+    h.exchange.set_fee_treasury(&treasury);
+    h.exchange.set_protocol_fee_bps(&10u32); // 0.10% protocol fee in addition to 0.30% LP fee
+
+    let result = h.exchange.swap(
+        &h.trader,
+        &h.pair_id,
+        &h.base.address,
+        &10_000i128,
+        &36_000i128,
+    );
+
+    // lp_fee = 30, protocol_fee = 10 -> amount_in_net = 9_960
+    // amount_out = 400_000 * 9_960 / (100_000 + 9_960) = 36_231
+    assert_eq!(result.amount_out, 36_231i128);
+    assert_eq!(h.base.balance(&treasury), 10i128);
+
+    let pair = h.exchange.get_pair(&h.pair_id);
+    assert_eq!(pair.base_reserve, 109_990i128);
+    assert_eq!(pair.quote_reserve, 363_769i128);
+}
