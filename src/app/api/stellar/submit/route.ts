@@ -42,6 +42,10 @@ export async function POST(request: NextRequest) {
         source: user.stellarPublicKey ?? "",
         recipient: existing.recipientAddress,
         fromAmount: existing.fromAmount,
+        fromAsset: existing.fromAsset,
+        toAsset: existing.toAsset,
+        destMin: existing.destMin ?? undefined,
+        unsignedTxHash: existing.unsignedTxHash ?? undefined,
         networkPassphrase: NETWORK_PASSPHRASE,
       });
     } catch (err) {

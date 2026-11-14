@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { TransactionBuilder } from "@stellar/stellar-sdk";
 import { data } from "@/lib/data";
 import { getCurrentUser } from "@/lib/auth";
 import { buildSendTransaction, resolveAsset, server, NETWORK_PASSPHRASE } from "@/lib/stellar";
@@ -88,12 +89,16 @@ export async function POST(request: NextRequest) {
       feeStroops: best.cost.networkFeeStroops,
     });
 
+    const unsignedTxHash = TransactionBuilder.fromXDR(xdr, NETWORK_PASSPHRASE).hash().toString("hex");
+
     const transaction = await data.transactions.create({
       userId: user.id,
       fromAsset: from,
       toAsset: to,
       fromAmount: amount,
       toAmount,
+      destMin,
+      unsignedTxHash,
       recipientAddress: cleanRecipient,
       status: "pending",
       stellarTxHash: null,
