@@ -28,7 +28,7 @@ hex = "0.4"
 regex-lite = "0.1"
 
 # bcrypt password hashing, ported from src/lib/auth.ts (hashPassword/verifyPassword).
-bcrypt = "0.9"
+bcrypt = "0.19"
 
 # Optional: only needed when building the WebAssembly bundle for the browser.
 # The host-side unit tests build without it, keeping `cargo test` fast.
